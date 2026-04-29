@@ -168,16 +168,43 @@ def get_cohort_summary(icd10_prefix: str) -> dict:
     confidences = [pp["confidence"] for pp in per_patient]
     cohort_confidence = float(np.mean(confidences)) if confidences else 0.0
 
-    # --- Step 4: cohort narrative via one more LLM call ---
-    # We take the per-patient summaries (already vetted for confidence)
-    # and ask the model to synthesize them into a cohort-level view.
-    # This is NOT a raw dump of patient data into the model —
-    # it's a synthesis of summaries already produced by the model,
-    # which is safer than starting from scratch with all records.
-    summaries_block = "\n\n".join(
-        f"[{pp['patient_id']}] {pp['full_name']}:\n{pp['summary']}"
-        for pp in per_patient
-    )
+        # --- Step 3: aggregate confidence — gated, not averaged ---
+    confidences = [pp["confidence"] for pp in per_patient]
+
+    # Worst-case confidence: the weakest link determines the floor.
+    # In a clinical setting, mean confidence is misleading — one patient
+    # with a failed summary is not compensated by nine successful ones.
+    # We report both so the client can make an informed decision.
+    cohort_confidence_mean = float(np.mean(confidences)) if confidences else 0.0
+    cohort_confidence_min  = float(np.min(confidences))  if confidences else 0.0
+
+    # Safety gate: if ANY patient falls below the LOW threshold (0.5),
+    # force the cohort-level confidence to LOW regardless of the mean.
+    SAFETY_THRESHOLD = 0.50
+    if cohort_confidence_min < SAFETY_THRESHOLD:
+        cohort_confidence = cohort_confidence_min
+        cohort_confidence_note = (
+            f"Cohort confidence degraded to minimum ({cohort_confidence_min:.0%}) "
+            f"because {len(flagged)} patient(s) had LOW individual confidence. "
+            f"Mean would have been {cohort_confidence_mean:.0%} — do not use mean in clinical context."
+        )
+    else:
+        cohort_confidence = cohort_confidence_mean
+        cohort_confidence_note = (
+            f"All patients above safety threshold. "
+            f"Mean confidence: {cohort_confidence_mean:.0%}, min: {cohort_confidence_min:.0%}."
+        )
+
+        # --- Step 4: cohort narrative via one more LLM call ---
+        # We take the per-patient summaries (already vetted for confidence)
+        # and ask the model to synthesize them into a cohort-level view.
+        # This is NOT a raw dump of patient data into the model —
+        # it's a synthesis of summaries already produced by the model,
+        # which is safer than starting from scratch with all records.
+        summaries_block = "\n\n".join(
+            f"[{pp['patient_id']}] {pp['full_name']}:\n{pp['summary']}"
+            for pp in per_patient
+        )
 
     cohort_narrative = call_llm(
         system=(
@@ -197,12 +224,15 @@ def get_cohort_summary(icd10_prefix: str) -> dict:
     )
 
     return {
-        "icd10_prefix": icd10_prefix,
-        "total_found": len(per_patient),
-        "cohort_confidence": round(cohort_confidence, 3),
-        "flagged_patients": flagged,
-        "cohort_narrative": cohort_narrative,
-        "patients": per_patient,
+    "icd10_prefix": icd10_prefix,
+    "total_found": len(per_patient),
+    "cohort_confidence": round(cohort_confidence, 3),
+    "cohort_confidence_mean": round(cohort_confidence_mean, 3),
+    "cohort_confidence_min": round(cohort_confidence_min, 3),
+    "cohort_confidence_note": cohort_confidence_note,
+    "flagged_patients": flagged,
+    "cohort_narrative": cohort_narrative,
+    "patients": per_patient,
     }
 
 

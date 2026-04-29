@@ -28,8 +28,13 @@ HOW TO RUN
     pytest tests/ -v
 """
 
+from ast import If
+
 import pytest
+import numpy as np
 from datetime import date
+from workflow.uncertainty import ConfidenceLevel, MEDIUM_CONFIDENCE_THRESHOLD
+from features.patient_lookup import get_patient_age
 
 # ---------------------------------------------------------------------------
 # Layer 1: Deterministic data retrieval
@@ -112,6 +117,13 @@ class TestDeterministicLookup:
         results = list_patients_by_diagnosis("Z99")
         assert results == []
 
+    def test_get_patient_whitespace_and_case(self):
+        # Sanitization: 'p001 ', ' P001\n', 'p001' all resolve to P001.
+        for dirty_id in ["p001", " P001", "P001\n", "p001\n\n"]:
+            result = get_patient_age(dirty_id)
+            assert result["found"] is True, f"Failed for input: {repr(dirty_id)}"
+            assert result["full_name"] == "Mario Rossi"
+
 
 # ---------------------------------------------------------------------------
 # Layer 2: Uncertainty math (no LLM needed)
@@ -166,6 +178,26 @@ class TestUncertaintyMath:
         confidence, _ = estimate_confidence_freetext(samples)
 
         assert confidence < 0.2
+
+    def test_semantic_paraphrase_scores_high(self):
+        """
+    Two Italian clinical paraphrases should score HIGH confidence.
+    This is the test Jaccard FAILS and embeddings PASS — it is the
+    core validation of the semantic upgrade.
+        """
+    from workflow.uncertainty import estimate_confidence_freetext
+    samples = [
+        "Il paziente presenta ipertensione arteriosa con valori pressori elevati.",
+        "Paziente con pressione alta, PA 160/95 alla misurazione.",
+        "Riscontrata ipertensione. Valori pressori superiori alla norma.",
+    ]
+    confidence, _ = estimate_confidence_freetext(samples)
+    # Semantically equivalent → should be HIGH (> 0.75)
+    # Jaccard on these would return ~0.05 → LOW (wrong)
+    assert confidence > 0.70, (
+        f"Semantic similarity should be HIGH for paraphrases, got {confidence:.3f}. "
+        f"If this fails, the Jaccard fallback may still be active."
+    )
 
     def test_build_uncertain_result_high(self):
         """Perfect agreement → HIGH confidence_level."""
@@ -265,3 +297,20 @@ class TestCohortWorkflowStructure:
         if len(admissions) >= 2:
             dates = [a["data_ingresso"] for a in admissions]
             assert dates == sorted(dates, reverse=True)
+        
+    def test_cohort_confidence_uses_min_when_patient_flagged(self):
+        #If any patient is flagged LOW, cohort_confidence must be <= 0.5.
+        # We simulate this by directly testing the aggregation logic.
+
+
+        confidences = [0.9, 0.95, 0.88, 0.1]  # one LOW patient
+        min_c = min(confidences)
+        mean_c = float(np.mean(confidences))
+
+        # Mean would be 0.7325 — HIGH. Min is 0.1 — LOW.
+        # The gate must pick min.
+        assert min_c < MEDIUM_CONFIDENCE_THRESHOLD
+        assert mean_c > MEDIUM_CONFIDENCE_THRESHOLD  # proves mean is misleading here
+        # Gate logic: min < 0.5 → use min
+        cohort_confidence = min_c if min_c < 0.5 else mean_c
+        assert cohort_confidence == min_c

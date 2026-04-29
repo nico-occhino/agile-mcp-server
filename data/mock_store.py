@@ -159,7 +159,11 @@ PATIENTS: dict[str, dict] = {
 
 def get_patient(patient_id: str) -> Optional[dict]:
     """Return the patient record, or None if not found."""
-    return PATIENTS.get(patient_id)
+    # Sanitize: strip whitespace, normalize to uppercase.
+    # This makes the lookup robust against LLM hallucinations like
+    # "p001", "P001 ", "P001\n" — all map to the canonical "P001".
+    clean_id = patient_id.strip().upper()
+    return PATIENTS.get(clean_id)
 
 
 def list_patients() -> list[dict]:
@@ -182,19 +186,13 @@ def get_active_ricovero(patient_id: str) -> Optional[dict]:
 
 
 def list_patients_by_diagnosis(icd10_prefix: str) -> list[dict]:
-    """
-    Return patients whose most recent ricovero has a primary diagnosis
-    starting with the given ICD-10 prefix.
-
-    Example: list_patients_by_diagnosis("J44") finds BPCO patients.
-    This is the kind of population query a clinician would make.
-    """
+    clean_prefix = icd10_prefix.strip().upper()
     results = []
     for p in PATIENTS.values():
         ricoveri = p.get("ricoveri", [])
         if not ricoveri:
             continue
         latest = max(ricoveri, key=lambda r: r["data_ingresso"])
-        if latest["diagnosi_principale"].startswith(icd10_prefix):
+        if latest["diagnosi_principale"].upper().startswith(clean_prefix):
             results.append(p)
     return results
