@@ -35,11 +35,14 @@ from __future__ import annotations
 
 import os
 from typing import Any
-from dotenv import load_dotenv
-from openai import OpenAI
 from pydantic import BaseModel
 
-load_dotenv()
+from dotenv import load_dotenv
+from openai import OpenAI
+
+from pathlib import Path
+env_path = Path(__file__).parent.parent / ".env"
+result = load_dotenv(env_path, override=True)
 
 # ---------------------------------------------------------------------------
 # Client — instantiated once, reused across all calls
