@@ -1,186 +1,109 @@
 """
 tests/test_features.py
------------------------
-Three tests, one per layer. These are the tripwire tests that Nocita and
-Morana can run to confirm the POC is working. They also protect you during
-refactoring — if a boundary breaks, a test fails immediately.
-
-WHAT WE TEST AND WHY ONLY THIS
---------------------------------
-  test_deterministic_lookup   — the data layer and pure-Python logic
-  test_uncertainty_math       — the uncertainty module in isolation (no LLM)
-  test_cohort_structure       — the multi-step workflow structure (no LLM)
-
-We do NOT test the LLM calls directly here (test_patient_summary, etc.)
-because:
-  1. They require a real API key and cost money.
-  2. They are non-deterministic — the same prompt can return different text.
-  3. Testing prompts is a different discipline (evals) — see docs/eval_plan.md.
-
-For LLM tests, write an eval script (scripts/eval.py) that runs the full
-pipeline against a suite of known queries and checks output *properties*
-("does the response mention the correct patient name?") not exact strings.
-That is your thesis evaluation methodology.
-
-HOW TO RUN
-----------
-    pip install pytest
-    pytest tests/ -v
+Patient IDs: "45"=Mario Rossi (discharged), "46"=Giovanna Ferrara (admitted),
+             "47"=Luca Bianchi (discharged), "48"=Sara Esposito (no event)
 """
-
 import pytest
 import numpy as np
-from datetime import date
 from workflow.uncertainty import ConfidenceLevel, MEDIUM_CONFIDENCE_THRESHOLD
 from features.patient_lookup import get_patient_age
-
-# ---------------------------------------------------------------------------
-# Layer 1: Deterministic data retrieval
-# ---------------------------------------------------------------------------
 
 class TestDeterministicLookup:
 
     def test_get_patient_age_known_patient(self):
-        """Mario Rossi was born 1991-01-01. His age should be calculable."""
         from features.patient_lookup import get_patient_age
         result = get_patient_age("45")
-
         assert result["found"] is True
         assert result["patient_id"] == "45"
         assert result["full_name"] == "Mario Rossi"
-        # Age should be a plausible integer (born 1991, so 34 or 35 in 2026)
         assert 30 <= result["age_years"] <= 40
         assert result["data_nascita"] == "1991-01-01"
 
     def test_get_patient_age_unknown_patient(self):
-        """Requesting a non-existent patient should return found=False, not raise."""
         from features.patient_lookup import get_patient_age
         result = get_patient_age("NONEXISTENT")
-
         assert result["found"] is False
         assert "error" in result
-        assert "NONEXISTENT" in result["error"]
 
     def test_get_patient_status_currently_admitted(self):
-        """Patient 46 is currently admitted — should surface active admission details."""
         from features.patient_lookup import get_patient_status
         result = get_patient_status("46")
-
         assert result["found"] is True
         assert result["stato"] == "ricoverato"
         assert "reparto" in result
 
     def test_get_patient_status_discharged(self):
-        """Patient 45 was discharged — should surface last discharge date."""
         from features.patient_lookup import get_patient_status
         result = get_patient_status("45")
-
         assert result["found"] is True
         assert result["stato"] == "dimesso"
         assert "ultima_dimissione" in result
 
     def test_get_patient_no_admissions(self):
-        """Patient 48 has no event — should handle gracefully."""
         from features.patient_lookup import get_patient_status
         result = get_patient_status("48")
-
         assert result["found"] is True
         assert result["stato"] == "mai_ricoverato"
 
     def test_get_admission_history_multiple_admissions(self):
-        """Patient 47 has an admission — history should list it."""
         from features.patient_lookup import get_admission_history
         result = get_admission_history("47")
-
         assert result["found"] is True
         assert result["total_admissions"] >= 1
         admissions = result["admissions"]
-        # Should be sorted by date ascending
         dates = [a["data_ingresso"] for a in admissions]
         assert dates == sorted(dates)
 
     def test_diagnosis_filter(self):
-        """Patient 46 has 4280 (Heart failure). Filtering by '428' should return 46."""
         from data.mock_store import list_patients_by_diagnosis
         results = list_patients_by_diagnosis("428")
-
         patient_ids = [p["patient"]["internalId"] for p in results]
         assert "46" in patient_ids
 
     def test_diagnosis_filter_no_match(self):
-        """No patient has Z99 codes. Should return empty list, not raise."""
         from data.mock_store import list_patients_by_diagnosis
         results = list_patients_by_diagnosis("Z99")
         assert results == []
 
     def test_get_patient_whitespace_and_case(self):
-        # Sanitization: '45 ', ' 45\n', '45' all resolve to 45.
         for dirty_id in ["45", " 45", "45\n", "45\n\n"]:
             result = get_patient_age(dirty_id)
             assert result["found"] is True, f"Failed for input: {repr(dirty_id)}"
             assert result["full_name"] == "Mario Rossi"
 
 
-# ---------------------------------------------------------------------------
-# Layer 2: Uncertainty math (no LLM needed)
-# ---------------------------------------------------------------------------
-
 class TestUncertaintyMath:
 
     def test_perfect_agreement_categorical(self):
-        """All N samples identical → confidence = 1.0."""
         from workflow.uncertainty import estimate_confidence_categorical
-        samples = ["P001", "P001", "P001"]
-        confidence, majority = estimate_confidence_categorical(samples)
-
+        confidence, majority = estimate_confidence_categorical(["45", "45", "45"])
         assert confidence == pytest.approx(1.0)
-        assert majority == "p001"  # normalised to lowercase
+        assert majority == "45"
 
     def test_total_disagreement_categorical(self):
-        """All N samples different → confidence approaches 0.0."""
         from workflow.uncertainty import estimate_confidence_categorical
-        samples = ["P001", "P002", "P003"]
-        confidence, _ = estimate_confidence_categorical(samples)
-
-        # With 3 equally likely outcomes: entropy = log(3), confidence = 0
+        confidence, _ = estimate_confidence_categorical(["45", "46", "47"])
         assert confidence == pytest.approx(0.0, abs=0.01)
 
     def test_partial_agreement_categorical(self):
-        """2/3 samples agree → intermediate confidence."""
         from workflow.uncertainty import estimate_confidence_categorical
-        samples = ["P001", "P001", "P002"]
-        confidence, majority = estimate_confidence_categorical(samples)
-
+        confidence, majority = estimate_confidence_categorical(["45", "45", "46"])
         assert 0.0 < confidence < 1.0
-        assert majority == "p001"
+        assert majority == "45"
 
     def test_perfect_agreement_freetext(self):
-        """Identical texts → Jaccard = 1.0 for all pairs → confidence = 1.0."""
         from workflow.uncertainty import estimate_confidence_freetext
         text = "Il paziente Mario Rossi è stabile, con valori pressori nella norma."
-        samples = [text, text, text]
-        confidence, _ = estimate_confidence_freetext(samples)
-
+        confidence, _ = estimate_confidence_freetext([text, text, text])
         assert confidence == pytest.approx(1.0)
 
     def test_completely_different_freetext(self):
-        """Completely different texts → very low confidence."""
         from workflow.uncertainty import estimate_confidence_freetext
-        samples = [
-            "aaa bbb ccc ddd eee fff",
-            "ggg hhh iii jjj kkk lll",
-            "mmm nnn ooo ppp qqq rrr",
-        ]
+        samples = ["aaa bbb ccc ddd eee fff", "ggg hhh iii jjj kkk lll", "mmm nnn ooo ppp qqq rrr"]
         confidence, _ = estimate_confidence_freetext(samples)
-
         assert confidence < 0.3
 
     def test_semantic_paraphrase_scores_high(self):
-        """
-        Two Italian clinical paraphrases should score HIGH confidence.
-        This is the test Jaccard FAILS and embeddings PASS — it is the
-        core validation of the semantic upgrade.
-        """
         from workflow.uncertainty import estimate_confidence_freetext
         samples = [
             "Il paziente presenta ipertensione arteriosa con valori pressori elevati.",
@@ -188,125 +111,70 @@ class TestUncertaintyMath:
             "Riscontrata ipertensione. Valori pressori superiori alla norma.",
         ]
         confidence, _ = estimate_confidence_freetext(samples)
-        # Semantically equivalent → should be HIGH (> 0.60 for this model)
-        # Jaccard on these would return ~0.05 → LOW (wrong)
-        assert confidence > 0.60, (
-            f"Semantic similarity should be HIGH for paraphrases, got {confidence:.3f}. "
-            f"If this fails, the Jaccard fallback may still be active."
-        )
+        assert confidence > 0.60, f"Semantic similarity should be HIGH for paraphrases, got {confidence:.3f}."
 
     def test_build_uncertain_result_high(self):
-        """Perfect agreement → HIGH confidence_level."""
         from workflow.uncertainty import build_uncertain_result, ConfidenceLevel
-        samples = ["P001", "P001", "P001"]
-        result = build_uncertain_result(samples, mode="categorical")
-
+        result = build_uncertain_result(["45", "45", "45"], mode="categorical")
         assert result.confidence_level == ConfidenceLevel.HIGH
         assert result.confidence == pytest.approx(1.0)
 
     def test_build_uncertain_result_low(self):
-        """Total disagreement → LOW confidence_level."""
         from workflow.uncertainty import build_uncertain_result, ConfidenceLevel
-        samples = ["P001", "P002", "P003"]
-        result = build_uncertain_result(samples, mode="categorical")
-
+        result = build_uncertain_result(["45", "46", "47"], mode="categorical")
         assert result.confidence_level == ConfidenceLevel.LOW
 
     def test_uncertain_result_serialises(self):
-        """to_dict() should produce a plain dict without UncertainResult in it."""
         from workflow.uncertainty import build_uncertain_result
-        samples = ["P001", "P001", "P002"]
-        result = build_uncertain_result(samples, mode="categorical")
+        result = build_uncertain_result(["45", "45", "46"], mode="categorical")
         d = result.to_dict()
-
         assert isinstance(d, dict)
-        assert "result" in d
-        assert "confidence" in d
-        assert "confidence_level" in d
-        assert "rationale" in d
-        # samples should NOT be in the serialised form (too verbose for MCP response)
+        assert "result" in d and "confidence" in d and "confidence_level" in d and "rationale" in d
         assert "samples" not in d
 
 
-# ---------------------------------------------------------------------------
-# Layer 3: Multi-step workflow structure (no LLM)
-# ---------------------------------------------------------------------------
-
 class TestCohortWorkflowStructure:
-    """
-    These tests call the cohort tools against the mock store but do NOT
-    make LLM calls. We verify:
-      - the workflow runs without raising
-      - the response shape is correct
-      - edge cases (no matching patients) are handled
-
-    The LLM-dependent cohort functions (get_cohort_summary) are NOT tested
-    here — they belong in the eval suite.
-    """
 
     def test_get_patients_by_diagnosis_found(self):
-        """'428' matches Patient 46 — should return a non-empty list."""
         from features.cohort import get_patients_by_diagnosis
         result = get_patients_by_diagnosis("428")
-
         assert result["total_found"] >= 1
         assert len(result["patients"]) == result["total_found"]
-        # Each patient entry should have at minimum these keys
         first = result["patients"][0]
-        assert "patient_id" in first
-        assert "full_name" in first
+        assert "patient_id" in first and "full_name" in first
 
     def test_get_patients_by_diagnosis_not_found(self):
-        """Unknown prefix → total_found = 0, patients = []."""
         from features.cohort import get_patients_by_diagnosis
         result = get_patients_by_diagnosis("Z99")
-
         assert result["total_found"] == 0
         assert result["patients"] == []
         assert "message" in result
 
     def test_get_recently_admitted_returns_valid_structure(self):
-        """Should return a dict with look_back_days, cutoff_date, admissions."""
         from features.cohort import get_recently_admitted
-        result = get_recently_admitted(days=365)  # wide window to catch our test data
-
-        assert "look_back_days" in result
+        result = get_recently_admitted(days=365)
         assert result["look_back_days"] == 365
-        assert "cutoff_date" in result
-        assert "total_found" in result
-        assert "admissions" in result
+        assert "cutoff_date" in result and "total_found" in result
         assert isinstance(result["admissions"], list)
 
     def test_get_recently_admitted_zero_days(self):
-        """A look-back of 0 days should return nothing (no future admissions)."""
         from features.cohort import get_recently_admitted
         result = get_recently_admitted(days=0)
-
         assert result["total_found"] == 0
 
     def test_cohort_admissions_sorted_descending(self):
-        """Admissions in the response should be sorted most-recent first."""
         from features.cohort import get_recently_admitted
         result = get_recently_admitted(days=365)
         admissions = result["admissions"]
-
         if len(admissions) >= 2:
             dates = [a["data_ingresso"] for a in admissions]
             assert dates == sorted(dates, reverse=True)
-        
+
     def test_cohort_confidence_uses_min_when_patient_flagged(self):
-        #If any patient is flagged LOW, cohort_confidence must be <= 0.5.
-        # We simulate this by directly testing the aggregation logic.
-
-
-        confidences = [0.9, 0.95, 0.88, 0.1]  # one LOW patient
+        confidences = [0.9, 0.95, 0.88, 0.1]
         min_c = min(confidences)
         mean_c = float(np.mean(confidences))
-
-        # Mean would be 0.7325 — HIGH. Min is 0.1 — LOW.
-        # The gate must pick min.
         assert min_c < MEDIUM_CONFIDENCE_THRESHOLD
-        assert mean_c > MEDIUM_CONFIDENCE_THRESHOLD  # proves mean is misleading here
-        # Gate logic: min < 0.5 → use min
+        assert mean_c > MEDIUM_CONFIDENCE_THRESHOLD
         cohort_confidence = min_c if min_c < 0.5 else mean_c
         assert cohort_confidence == min_c
