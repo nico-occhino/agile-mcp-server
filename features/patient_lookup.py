@@ -21,7 +21,7 @@ multiple calls into a multi-step workflow.
 from __future__ import annotations
 
 from datetime import date
-from data.mock_store import get_patient, get_active_ricovero
+from data.mock_store import get_patient
 
 
 # ---------------------------------------------------------------------------
@@ -39,16 +39,17 @@ def get_patient_age(patient_id: str) -> dict:
     Returns a dict with:
         patient_id, full_name, age_years, data_nascita, found (bool)
     """
-    patient = get_patient(patient_id)
+    record = get_patient(patient_id)
 
-    if patient is None:
+    if record is None or "patient" not in record:
         return {
             "found": False,
             "patient_id": patient_id,
             "error": f"No patient found with ID '{patient_id}'.",
         }
 
-    dob = date.fromisoformat(patient["data_nascita"])
+    patient = record["patient"]
+    dob = date.fromisoformat(patient["birthDate"][:10])
     today = date.today()
     # Correct age calculation: subtract 1 if birthday hasn't passed yet this year
     age = today.year - dob.year - (
@@ -58,9 +59,9 @@ def get_patient_age(patient_id: str) -> dict:
     return {
         "found": True,
         "patient_id": patient_id,
-        "full_name": f"{patient['nome']} {patient['cognome']}",
+        "full_name": f"{patient['name']} {patient['surname']}",
         "age_years": age,
-        "data_nascita": patient["data_nascita"],
+        "data_nascita": patient["birthDate"][:10],
     }
 
 
@@ -82,49 +83,47 @@ def get_patient_status(patient_id: str) -> dict:
     This is the kind of query a clinician makes at the start of a shift:
     "How is patient P002 today?"
     """
-    patient = get_patient(patient_id)
+    record = get_patient(patient_id)
 
-    if patient is None:
+    if record is None or "patient" not in record:
         return {
             "found": False,
             "patient_id": patient_id,
             "error": f"No patient found with ID '{patient_id}'.",
         }
 
-    active = get_active_ricovero(patient_id)
+    patient = record["patient"]
+    event = record.get("event")
 
-    if active:
+    if event and event.get("dateEnd") is None:
         return {
             "found": True,
             "patient_id": patient_id,
-            "full_name": f"{patient['nome']} {patient['cognome']}",
+            "full_name": f"{patient['name']} {patient['surname']}",
             "stato": "ricoverato",
-            "reparto": active["reparto"],
-            "data_ingresso": active["data_ingresso"],
-            "diagnosi_principale": active["diagnosi_principale"],
-            "farmaci": active["farmaci"],
+            "reparto": event["uoDescription"],
+            "data_ingresso": event["dateStart"][:10],
+            "diagnosi_principale": event.get("diagnosis", {}).get("primary"),
         }
 
     # Not currently admitted — find the most recent discharge
-    ricoveri = patient.get("ricoveri", [])
-    if not ricoveri:
+    if not event:
         return {
             "found": True,
             "patient_id": patient_id,
-            "full_name": f"{patient['nome']} {patient['cognome']}",
+            "full_name": f"{patient['name']} {patient['surname']}",
             "stato": "mai_ricoverato",
             "message": "Patient has no recorded hospital admissions.",
         }
 
-    latest = max(ricoveri, key=lambda r: r["data_dimissione"] or "")
     return {
         "found": True,
         "patient_id": patient_id,
-        "full_name": f"{patient['nome']} {patient['cognome']}",
+        "full_name": f"{patient['name']} {patient['surname']}",
         "stato": "dimesso",
-        "ultima_dimissione": latest["data_dimissione"],
-        "ultimo_reparto": latest["reparto"],
-        "ultima_diagnosi": latest["diagnosi_principale"],
+        "ultima_dimissione": event["dateEnd"],
+        "ultimo_reparto": event["uoDescription"],
+        "ultima_diagnosi": event.get("diagnosis", {}).get("primary"),
     }
 
 
@@ -142,34 +141,34 @@ def get_admission_history(patient_id: str) -> dict:
     Useful for longitudinal queries: "How many times has P003 been admitted?"
     or "What was P003's first diagnosis?"
     """
-    patient = get_patient(patient_id)
+    record = get_patient(patient_id)
 
-    if patient is None:
+    if record is None or "patient" not in record:
         return {
             "found": False,
             "patient_id": patient_id,
             "error": f"No patient found with ID '{patient_id}'.",
         }
 
-    ricoveri = sorted(
-        patient.get("ricoveri", []),
-        key=lambda r: r["data_ingresso"],
-    )
+    patient = record["patient"]
+    event = record.get("event")
+
+    # Note: Multi-event history requires a separate API endpoint.
+    ricoveri = []
+    if event:
+        ricoveri.append({
+            "id_ricovero": event.get("eventId"),
+            "reparto": event["uoDescription"],
+            "data_ingresso": event["dateStart"][:10],
+            "data_dimissione": event["dateEnd"],
+            "diagnosi_principale": event.get("diagnosis", {}).get("primary"),
+            "stato": "ricoverato" if event.get("dateEnd") is None else "dimesso",
+        })
 
     return {
         "found": True,
         "patient_id": patient_id,
-        "full_name": f"{patient['nome']} {patient['cognome']}",
+        "full_name": f"{patient['name']} {patient['surname']}",
         "total_admissions": len(ricoveri),
-        "admissions": [
-            {
-                "id_ricovero": r["id_ricovero"],
-                "reparto": r["reparto"],
-                "data_ingresso": r["data_ingresso"],
-                "data_dimissione": r["data_dimissione"],
-                "diagnosi_principale": r["diagnosi_principale"],
-                "stato": r["stato"],
-            }
-            for r in ricoveri
-        ],
+        "admissions": ricoveri,
     }

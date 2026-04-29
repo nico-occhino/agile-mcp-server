@@ -87,11 +87,13 @@ def get_patients_by_diagnosis(icd10_prefix: str) -> dict:
 
     patients_detail = []
     for p in matching:
-        status = get_patient_status(p["id"])  # reuse the single-patient tool
+        patient = p.get("patient")
+        if not patient: continue
+        status = get_patient_status(patient["internalId"])  # reuse the single-patient tool
         patients_detail.append({
-            "patient_id": p["id"],
-            "full_name": f"{p['nome']} {p['cognome']}",
-            "data_nascita": p["data_nascita"],
+            "patient_id": patient["internalId"],
+            "full_name": f"{patient['name']} {patient['surname']}",
+            "data_nascita": patient["birthDate"][:10],
             **{k: v for k, v in status.items() if k not in ("found", "patient_id")},
         })
 
@@ -148,17 +150,19 @@ def get_cohort_summary(icd10_prefix: str) -> dict:
     flagged = []
 
     for p in matching:
-        summary_result = get_patient_summary(p["id"])
+        patient = p.get("patient")
+        if not patient: continue
+        summary_result = get_patient_summary(patient["internalId"])
 
         confidence = summary_result.get("confidence", 0.0)
         level = summary_result.get("confidence_level", "LOW")
 
         if level == "LOW":
-            flagged.append(p["id"])
+            flagged.append(patient["internalId"])
 
         per_patient.append({
-            "patient_id": p["id"],
-            "full_name": f"{p['nome']} {p['cognome']}",
+            "patient_id": patient["internalId"],
+            "full_name": f"{patient['name']} {patient['surname']}",
             "summary": summary_result.get("result", "Summary unavailable."),
             "confidence": confidence,
             "confidence_level": level,
@@ -258,20 +262,22 @@ def get_recently_admitted(days: int = 7) -> dict:
     recent = []
 
     for p_summary in all_patients:
-        patient = get_patient(p_summary["id"])
-        if not patient:
+        record = get_patient(p_summary["internalId"])
+        if not record:
             continue
-        for r in patient.get("ricoveri", []):
-            if r["data_ingresso"] >= cutoff_str:
+        patient = record.get("patient")
+        event = record.get("event")
+        
+        if patient and event:
+            if event["dateStart"][:10] >= cutoff_str:
                 recent.append({
-                    "patient_id": patient["id"],
-                    "full_name": f"{patient['nome']} {patient['cognome']}",
-                    "reparto": r["reparto"],
-                    "data_ingresso": r["data_ingresso"],
-                    "diagnosi_principale": r["diagnosi_principale"],
-                    "stato": r["stato"],
+                    "patient_id": patient["internalId"],
+                    "full_name": f"{patient['name']} {patient['surname']}",
+                    "reparto": event["uoDescription"],
+                    "data_ingresso": event["dateStart"][:10],
+                    "diagnosi_principale": event.get("diagnosis", {}).get("primary"),
+                    "stato": "ricoverato" if event.get("dateEnd") is None else "dimesso",
                 })
-                break  # only count most recent admission per patient
 
     return {
         "look_back_days": days,

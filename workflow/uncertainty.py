@@ -258,3 +258,36 @@ def estimate_confidence_freetext(samples: list[str]) -> tuple[float, str]:
     best_idx = int(np.argmax(row_means))
 
     return float(np.clip(mean_sim, 0.0, 1.0)), samples[best_idx]
+
+
+def build_uncertain_result(samples: list[str], mode: str) -> UncertainResult:
+    """
+    Build an UncertainResult from a list of LLM samples.
+    
+    Args:
+        samples: The raw text samples from the LLM.
+        mode: "categorical" or "freetext"
+    """
+    if mode == "categorical":
+        confidence, result = estimate_confidence_categorical(samples)
+    elif mode == "freetext":
+        confidence, result = estimate_confidence_freetext(samples)
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
+
+    level = _level(confidence)
+    
+    if level == ConfidenceLevel.HIGH:
+        rationale = "High agreement across LLM samples."
+    elif level == ConfidenceLevel.MEDIUM:
+        rationale = "Medium agreement across LLM samples — some variation detected."
+    else:
+        rationale = "Low agreement across LLM samples — results are inconsistent."
+
+    return UncertainResult(
+        result=result,
+        confidence=confidence,
+        confidence_level=level,
+        samples=samples,
+        rationale=rationale
+    )

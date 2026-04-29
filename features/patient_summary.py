@@ -22,7 +22,7 @@ The workflow for get_patient_discharge_draft():
 
 from __future__ import annotations
 
-from data.mock_store import get_patient, get_active_ricovero
+from data.mock_store import get_patient
 from workflow.llm_client import call_llm, call_llm_n_times, call_llm_structured
 from workflow.uncertainty import build_uncertain_result, UncertainResult
 from pydantic import BaseModel
@@ -90,23 +90,21 @@ def get_patient_summary(patient_id: str) -> dict:
     Returns a dict with: result (the summary), confidence (0–1),
     confidence_level (HIGH/MEDIUM/LOW), and rationale.
     """
-    patient = get_patient(patient_id)
-    if patient is None:
+    record = get_patient(patient_id)
+    if record is None or "patient" not in record:
         return {
             "found": False,
             "error": f"No patient found with ID '{patient_id}'.",
         }
 
+    patient = record["patient"]
+    event = record.get("event")
+
     # --- Step 1: Format the patient data as a structured string for the prompt ---
     # We deliberately flatten to text here rather than passing raw JSON to the LLM.
     # Text forces the model to read the data linearly, which produces more
     # consistent outputs than JSON (which the model might skip over or misparse).
-    ricoveri = patient.get("ricoveri", [])
-    latest_ricovero = (
-        max(ricoveri, key=lambda r: r["data_ingresso"]) if ricoveri else None
-    )
-
-    patient_data_str = _format_patient_for_prompt(patient, latest_ricovero)
+    patient_data_str = _format_patient_for_prompt(patient, event)
 
     # --- Step 2: Call the LLM N times at temperature > 0 ---
     samples = call_llm_n_times(
@@ -157,22 +155,23 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     Args:
         patient_id: the patient's hospital identifier (e.g. "P001")
     """
-    patient = get_patient(patient_id)
-    if patient is None:
+    record = get_patient(patient_id)
+    if record is None or "patient" not in record:
         return {
             "found": False,
             "error": f"No patient found with ID '{patient_id}'.",
         }
 
-    ricoveri = patient.get("ricoveri", [])
-    if not ricoveri:
+    patient = record["patient"]
+    event = record.get("event")
+
+    if not event:
         return {
             "found": True,
             "error": "No admission records found. Cannot generate discharge letter.",
         }
 
-    latest = max(ricoveri, key=lambda r: r["data_ingresso"])
-    patient_data_str = _format_patient_for_prompt(patient, latest)
+    patient_data_str = _format_patient_for_prompt(patient, event)
 
     # --- Step A: Structured extraction of clinical flags ---
     # Temperature = 0 here because we want deterministic extraction.
@@ -200,14 +199,14 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     """
 
     discharge_user = f"""
-    Patient: {patient['nome']} {patient['cognome']}, born {patient['data_nascita']}
+    Patient: {patient['name']} {patient['surname']}, born {patient['birthDate'][:10]}
     Primary diagnosis: {flags.primary_diagnosis_description}
     Active conditions: {', '.join(flags.active_conditions) or 'none documented'}
     Medications to continue: {', '.join(flags.key_medications) or 'none'}
     Follow-up required: {'Yes' if flags.follow_up_required else 'No'}
     {f'Follow-up notes: {flags.follow_up_notes}' if flags.follow_up_notes else ''}
 
-    Raw clinical notes: {latest.get('note_cliniche', 'not available')}
+    Raw clinical notes: {event.get('eventReason', 'not available')}
 
     Write the clinical summary section of the discharge letter.
     """
@@ -223,7 +222,7 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     return {
         "found": True,
         "patient_id": patient_id,
-        "patient_name": f"{patient['nome']} {patient['cognome']}",
+        "patient_name": f"{patient['name']} {patient['surname']}",
         "extracted_flags": flags.model_dump(),
         **uncertain_result.to_dict(),
     }
@@ -233,7 +232,7 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
 # Internal helper — format patient record for prompt injection
 # ---------------------------------------------------------------------------
 
-def _format_patient_for_prompt(patient: dict, ricovero: dict | None) -> str:
+def _format_patient_for_prompt(patient: dict, event: dict | None) -> str:
     """
     Convert a patient record into a clean text block for LLM prompts.
 
@@ -241,23 +240,22 @@ def _format_patient_for_prompt(patient: dict, ricovero: dict | None) -> str:
     in one place and all features that use it benefit immediately.
     """
     lines = [
-        f"Name: {patient['nome']} {patient['cognome']}",
-        f"Date of birth: {patient['data_nascita']}",
-        f"Sex: {patient.get('sesso', 'not specified')}",
-        f"Municipality of residence: {patient.get('comune_residenza', 'not specified')}",
+        f"Name: {patient['name']} {patient['surname']}",
+        f"Date of birth: {patient['birthDate'][:10]}",
     ]
 
-    if ricovero:
+    if patient.get("allergy"):
+        lines.append(f"⚠️  KNOWN ALLERGY: {patient['allergy']}")
+
+    if event:
         lines += [
             "",
             f"Most recent admission:",
-            f"  Ward (reparto): {ricovero['reparto']}",
-            f"  Admission date: {ricovero['data_ingresso']}",
-            f"  Discharge date: {ricovero.get('data_dimissione') or 'currently admitted'}",
-            f"  Primary diagnosis (ICD-10): {ricovero['diagnosi_principale']}",
-            f"  Secondary diagnoses: {', '.join(ricovero.get('diagnosi_secondarie', [])) or 'none'}",
-            f"  Medications: {', '.join(ricovero.get('farmaci', [])) or 'none documented'}",
-            f"  Clinical notes: {ricovero.get('note_cliniche', 'not available')}",
+            f"  Ward (reparto): {event['uoDescription']}",
+            f"  Admission date: {event['dateStart'][:10]}",
+            f"  Discharge date: {event.get('dateEnd') or 'currently admitted'}",
+            f"  Primary diagnosis: {event.get('diagnosis', {}).get('primary')}",
+            f"  Clinical notes: {event.get('eventReason', 'not available')}",
         ]
     else:
         lines.append("No recorded hospital admissions.")
