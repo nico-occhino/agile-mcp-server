@@ -46,7 +46,9 @@ load_dotenv()
 # ---------------------------------------------------------------------------
 
 _client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
+    # Accepts LLM_API_KEY (preferred, provider-agnostic) or OPENAI_API_KEY as fallback.
+    # Keep whichever name you use consistent with your .env file.
+    api_key=os.getenv("LLM_API_KEY", os.getenv("OPENAI_API_KEY", "no-key-set")),
     base_url=os.getenv("LLM_BASE_URL", "https://api.openai.com/v1"),
 )
 
