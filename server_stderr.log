@@ -1,0 +1,74 @@
+Traceback (most recent call last):
+  File "C:\Users\nicoo\Desktop\agile-mcp-server\server.py", line 78, in <module>
+    from features.patient_summary import (
+    ...<2 lines>...
+    )
+  File "C:\Users\nicoo\Desktop\agile-mcp-server\features\patient_summary.py", line 17, in <module>
+    from workflow.uncertainty import build_uncertain_result, UncertainResult
+  File "C:\Users\nicoo\Desktop\agile-mcp-server\workflow\uncertainty.py", line 31, in <module>
+    from sentence_transformers import SentenceTransformer
+ModuleNotFoundError: No module named 'sentence_transformers'
+Traceback (most recent call last):
+  File "C:\Users\nicoo\Desktop\agile-mcp-server\server.py", line 78, in <module>
+    from features.patient_summary import (
+    ...<2 lines>...
+    )
+  File "C:\Users\nicoo\Desktop\agile-mcp-server\features\patient_summary.py", line 17, in <module>
+    from workflow.uncertainty import build_uncertain_result, UncertainResult
+  File "C:\Users\nicoo\Desktop\agile-mcp-server\workflow\uncertainty.py", line 31, in <module>
+    from sentence_transformers import SentenceTransformer
+ModuleNotFoundError: No module named 'sentence_transformers'
+
+
++-----------------------------------------------------------------------------+
+|                                                                             |
+|                                                                             |
+|                        \u2584\u2580\u2580 \u2584\u2580\u2588 \u2588\u2580\u2580 \u2580\u2588\u2580 \u2588\u2580\u2584\u2580\u2588 \u2588\u2580\u2580 \u2588\u2580\u2588                        |
+|                        \u2588\u2580  \u2588\u2580\u2588 \u2584\u2584\u2588  \u2588  \u2588 \u2580 \u2588 \u2588\u2584\u2584 \u2588\u2580\u2580                        |
+|                                                                             |
+|                                                                             |
+|                                                                             |
+|                                FastMCP 3.2.4                                |
+|                            https://gofastmcp.com                            |
+|                                                                             |
+|                 \U0001f5a5  Server:      agile-hospital, 3.2.4                       |
+|                 \U0001f680 Deploy free: https://horizon.prefect.io                  |
+|                                                                             |
++-----------------------------------------------------------------------------+
+
+
+[05/01/26 17:45:17] INFO     Starting MCP server               transport.py:209
+                             'agile-hospital' with transport                   
+                             'stdio'                                           
+
+
++-----------------------------------------------------------------------------+
+|                                                                             |
+|                                                                             |
+|                        \u2584\u2580\u2580 \u2584\u2580\u2588 \u2588\u2580\u2580 \u2580\u2588\u2580 \u2588\u2580\u2584\u2580\u2588 \u2588\u2580\u2580 \u2588\u2580\u2588                        |
+|                        \u2588\u2580  \u2588\u2580\u2588 \u2584\u2584\u2588  \u2588  \u2588 \u2580 \u2588 \u2588\u2584\u2584 \u2588\u2580\u2580                        |
+|                                                                             |
+|                                                                             |
+|                                                                             |
+|                                FastMCP 3.2.4                                |
+|                            https://gofastmcp.com                            |
+|                                                                             |
+|                 \U0001f5a5  Server:      agile-hospital, 3.2.4                       |
+|                 \U0001f680 Deploy free: https://horizon.prefect.io                  |
+|                                                                             |
++-----------------------------------------------------------------------------+
+
+
+[05/01/26 17:48:22] INFO     Starting MCP server               transport.py:209
+                             'agile-hospital' with transport                   
+                             'stdio'                                           
+Traceback (most recent call last):
+  File "C:\Users\nicoo\Desktop\agile-mcp-server\server.py", line 78, in <module>
+    from features.patient_summary import (
+    ...<2 lines>...
+    )
+  File "C:\Users\nicoo\Desktop\agile-mcp-server\features\patient_summary.py", line 17, in <module>
+    from workflow.uncertainty import build_uncertain_result, UncertainResult
+  File "C:\Users\nicoo\Desktop\agile-mcp-server\workflow\uncertainty.py", line 31, in <module>
+    from sentence_transformers import SentenceTransformer
+ModuleNotFoundError: No module named 'sentence_transformers'
