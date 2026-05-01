@@ -7,7 +7,11 @@ Schema: Nocita's real API shape (event + patient blocks, numeric IDs).
 """
 from __future__ import annotations
 from datetime import date
-from data.mock_store import get_patient
+from data.repository import get_repository
+_repo = get_repository()
+
+def _get_repo():
+    return get_repository()
 
 def get_patient_age(patient_id: str) -> dict:
     """
@@ -16,7 +20,7 @@ def get_patient_age(patient_id: str) -> dict:
     Args:
         patient_id: the patient's numeric hospital identifier (e.g. "45")
     """
-    record = get_patient(patient_id)
+    record = _get_repo().get_patient(patient_id)
     if record is None or "patient" not in record:
         return {"found": False, "patient_id": patient_id, "error": f"No patient found with ID '{patient_id}'."}
     patient = record["patient"]
@@ -35,7 +39,7 @@ def get_patient_status(patient_id: str) -> dict:
     Args:
         patient_id: the patient's numeric hospital identifier (e.g. "45")
     """
-    record = get_patient(patient_id)
+    record = _get_repo().get_patient(patient_id)
     if record is None or "patient" not in record:
         return {"found": False, "patient_id": patient_id, "error": f"No patient found with ID '{patient_id}'."}
     patient = record["patient"]
@@ -56,7 +60,7 @@ def get_admission_history(patient_id: str) -> dict:
     Args:
         patient_id: the patient's numeric hospital identifier (e.g. "45")
     """
-    record = get_patient(patient_id)
+    record = _get_repo().get_patient(patient_id)
     if record is None or "patient" not in record:
         return {"found": False, "patient_id": patient_id, "error": f"No patient found with ID '{patient_id}'."}
     patient = record["patient"]

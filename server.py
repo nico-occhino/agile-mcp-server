@@ -67,6 +67,11 @@ Test with mcp-cli:
 from dotenv import load_dotenv
 load_dotenv()  # must happen before any module that reads env vars is imported
 
+from workflow.logging import configure_logging
+configure_logging()
+
+from workflow.instrumentation import instrumented
+
 from fastmcp import FastMCP
 
 # Import all feature functions
@@ -115,18 +120,18 @@ mcp = FastMCP(
 # ---------------------------------------------------------------------------
 
 # --- Deterministic lookups (no LLM) ---
-mcp.tool()(get_patient_age)
-mcp.tool()(get_patient_status)
-mcp.tool()(get_admission_history)
+mcp.tool()(instrumented("get_patient_age")(get_patient_age))
+mcp.tool()(instrumented("get_patient_status")(get_patient_status))
+mcp.tool()(instrumented("get_admission_history")(get_admission_history))
 
 # --- LLM-based, uncertainty-aware ---
-mcp.tool()(get_patient_summary)
-mcp.tool()(get_patient_discharge_draft)
+mcp.tool()(instrumented("get_patient_summary")(get_patient_summary))
+mcp.tool()(instrumented("get_patient_discharge_draft")(get_patient_discharge_draft))
 
 # --- Multi-step workflows ---
-mcp.tool()(get_patients_by_diagnosis)
-mcp.tool()(get_cohort_summary)
-mcp.tool()(get_recently_admitted)
+mcp.tool()(instrumented("get_patients_by_diagnosis")(get_patients_by_diagnosis))
+mcp.tool()(instrumented("get_cohort_summary")(get_cohort_summary))
+mcp.tool()(instrumented("get_recently_admitted")(get_recently_admitted))
 
 
 # ---------------------------------------------------------------------------

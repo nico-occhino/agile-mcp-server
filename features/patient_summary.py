@@ -12,7 +12,11 @@ Workflow:
 """
 
 from __future__ import annotations
-from data.mock_store import get_patient, get_patient_allergy
+from data.repository import get_repository
+_repo = get_repository()
+
+def _get_repo():
+    return get_repository()
 from workflow.llm_client import call_llm, call_llm_n_times, call_llm_structured
 from workflow.uncertainty import build_uncertain_result, UncertainResult
 from pydantic import BaseModel
@@ -62,7 +66,7 @@ def get_patient_summary(patient_id: str) -> dict:
     Args:
         patient_id: numeric hospital identifier (e.g. "45")
     """
-    record = get_patient(patient_id)
+    record = _get_repo().get_patient(patient_id)
     if record is None:
         return {
             "found": False,
@@ -103,7 +107,7 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     Args:
         patient_id: numeric hospital identifier (e.g. "45")
     """
-    record = get_patient(patient_id)
+    record = _get_repo().get_patient(patient_id)
     if record is None:
         return {
             "found": False,

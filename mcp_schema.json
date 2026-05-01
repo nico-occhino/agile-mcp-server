@@ -1,0 +1,139 @@
+{
+  "server_name": "agile-hospital",
+  "tools": [
+    {
+      "name": "get_patient_age",
+      "description": "Return the age of a patient in years given their hospital ID.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "description": "the patient's numeric hospital identifier (e.g. \"45\")"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_patient_status",
+      "description": "Return the current admission status of a patient.\n\nIf dateEnd is None the patient is currently admitted.\nIf dateEnd is set the patient has been discharged.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "description": "the patient's numeric hospital identifier (e.g. \"45\")"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_admission_history",
+      "description": "Return the admission record(s) for a patient.\n\nNOTE: Agile's current API returns one event per request.\nMulti-event history requires a dedicated history endpoint (Phase 2).",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "description": "the patient's numeric hospital identifier (e.g. \"45\")"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_patient_summary",
+      "description": "Generate a concise clinical summary for a patient using an LLM.\n\nCalls the LLM N times independently and returns the most consistent\nresponse together with a semantic confidence score (0\u20131).\nLOW confidence means the model was uncertain \u2014 clinician must verify.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "description": "numeric hospital identifier (e.g. \"45\")"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_patient_discharge_draft",
+      "description": "Generate a draft discharge letter section for a patient.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "patient_id": {
+            "type": "string",
+            "description": "numeric hospital identifier (e.g. \"45\")"
+          }
+        },
+        "required": [
+          "patient_id"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_patients_by_diagnosis",
+      "description": "Return all patients whose primary diagnosis code starts with the given prefix.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "icd10_prefix": {
+            "type": "string",
+            "description": "numeric prefix (e.g. \"428\" for heart failure, \"434\" for stroke)"
+          }
+        },
+        "required": [
+          "icd10_prefix"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_cohort_summary",
+      "description": "Generate a cohort-level summary with per-patient LLM summaries\nand a gated aggregate confidence score.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "icd10_prefix": {
+            "type": "string",
+            "description": "numeric diagnosis prefix (e.g. \"428\", \"434\")"
+          }
+        },
+        "required": [
+          "icd10_prefix"
+        ],
+        "type": "object"
+      }
+    },
+    {
+      "name": "get_recently_admitted",
+      "description": "Return all patients admitted within the last N days.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "days": {
+            "default": 7,
+            "type": "integer",
+            "description": "look-back window in days (default: 7)"
+          }
+        },
+        "type": "object"
+      }
+    }
+  ]
+}

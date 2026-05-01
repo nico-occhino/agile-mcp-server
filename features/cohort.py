@@ -13,7 +13,11 @@ high scores on other patients. Both mean and min are always returned.
 """
 from __future__ import annotations
 from datetime import date, timedelta
-from data.mock_store import list_patients_by_diagnosis, get_patient, list_patients
+from data.repository import get_repository
+_repo = get_repository()
+
+def _get_repo():
+    return get_repository()
 from features.patient_lookup import get_patient_status
 from features.patient_summary import get_patient_summary
 from workflow.llm_client import call_llm
@@ -29,7 +33,7 @@ def get_patients_by_diagnosis(icd10_prefix: str) -> dict:
     Args:
         icd10_prefix: numeric prefix (e.g. "428" for heart failure, "434" for stroke)
     """
-    matching = list_patients_by_diagnosis(icd10_prefix)
+    matching = _get_repo().list_patients_by_diagnosis(icd10_prefix)
     if not matching:
         return {"icd10_prefix": icd10_prefix, "total_found": 0, "patients": [], "message": f"No patients found with diagnosis code starting with '{icd10_prefix}'."}
     patients_detail = []
@@ -50,7 +54,7 @@ def get_cohort_summary(icd10_prefix: str) -> dict:
     Args:
         icd10_prefix: numeric diagnosis prefix (e.g. "428", "434")
     """
-    matching = list_patients_by_diagnosis(icd10_prefix)
+    matching = _get_repo().list_patients_by_diagnosis(icd10_prefix)
     if not matching:
         return {"icd10_prefix": icd10_prefix, "total_found": 0, "cohort_narrative": f"No patients found with prefix '{icd10_prefix}'.", "patients": [], "cohort_confidence": None, "flagged_patients": []}
 
@@ -114,10 +118,10 @@ def get_recently_admitted(days: int = 7) -> dict:
     """
     cutoff = date.today() - timedelta(days=days)
     cutoff_str = cutoff.isoformat()
-    all_patients = list_patients()
+    all_patients = _get_repo().list_patients()
     recent = []
     for p_summary in all_patients:
-        record = get_patient(p_summary["internalId"])
+        record = _get_repo().get_patient(p_summary["internalId"])
         if not record:
             continue
         patient = record.get("patient")
