@@ -105,6 +105,11 @@ def render(tool_name: str, result: dict) -> str:
     if allergy is not None:
         lines.append(f"🚨 ALLERGIA: {allergy}")
 
+    if "error" in result:
+        name = result.get("patient_name", result.get("full_name", ""))
+        name_line = f"Paziente: {name}\n" if name else ""
+        return f"{name_line}⚠️  {result['error']}"
+
     # --- Rules 3 & 4: LLM-based vs deterministic ---
     if "result" in result:
         # LLM-based tool

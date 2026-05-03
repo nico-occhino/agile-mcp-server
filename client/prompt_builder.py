@@ -68,5 +68,14 @@ REGOLE IMPORTANTI:
 - Se la query è ambigua, mancano informazioni obbligatorie, o non corrisponde a nessun intento, restituisci:
   {{"intent": "unknown", "raw_query": "<query originale>", "reason": "<motivo breve in inglese>"}}
 - Restituisci SOLO JSON grezzo. Nessun blocco markdown, nessun testo aggiuntivo prima o dopo.
+
+ESEMPI DI INTENTI SCONOSCIUTI (restituisci sempre unknown per questi):
+
+"Chi è?" → {{"intent": "unknown", "raw_query": "Chi è?", "reason": "missing patient_id"}}
+"Come si cura il diabete?" → {{"intent": "unknown", "raw_query": "Come si cura il diabete?", "reason": "medical knowledge question, not a patient lookup"}}
+"Quali farmaci prende?" → {{"intent": "unknown", "raw_query": "Quali farmaci prende?", "reason": "missing patient_id"}}
+"Che ore sono?" → {{"intent": "unknown", "raw_query": "Che ore sono?", "reason": "unrelated to clinical tools"}}
+Se la query non specifica un patient_id numerico quando richiesto, o non corrisponde
+a nessun tool, restituisci SEMPRE unknown.
 """
     return prompt

@@ -8,7 +8,6 @@ Schema: Nocita's real API shape (event + patient blocks, numeric IDs).
 from __future__ import annotations
 from datetime import date
 from data.repository import get_repository
-_repo = get_repository()
 
 def _get_repo():
     return get_repository()

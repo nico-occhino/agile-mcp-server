@@ -240,3 +240,104 @@ Processing request of type CallToolRequest
 Processing request of type CallToolRequest
 {"tool": "get_recently_admitted", "kwargs": {"days": 7}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-01T17:20:03.047031Z"}
 {"tool": "get_recently_admitted", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-01T17:20:03.047130Z"}
+HTTP Request: GET https://pypi.org/pypi/fastmcp/json "HTTP/1.1 200 OK"
+
+
++-----------------------------------------------------------------------------+
+|                                                                             |
+|                                                                             |
+|                        \u2584\u2580\u2580 \u2584\u2580\u2588 \u2588\u2580\u2580 \u2580\u2588\u2580 \u2588\u2580\u2584\u2580\u2588 \u2588\u2580\u2580 \u2588\u2580\u2588                        |
+|                        \u2588\u2580  \u2588\u2580\u2588 \u2584\u2584\u2588  \u2588  \u2588 \u2580 \u2588 \u2588\u2584\u2584 \u2588\u2580\u2580                        |
+|                                                                             |
+|                                                                             |
+|                                                                             |
+|                                FastMCP 3.2.4                                |
+|                            https://gofastmcp.com                            |
+|                                                                             |
+|                 \U0001f5a5  Server:      agile-hospital, 3.2.4                       |
+|                 \U0001f680 Deploy free: https://horizon.prefect.io                  |
+|                                                                             |
++-----------------------------------------------------------------------------+
+
+
+[05/03/26 22:09:41] INFO     Starting MCP server               transport.py:209
+                             'agile-hospital' with transport                   
+                             'stdio'                                           
+Processing request of type CallToolRequest
+{"tool": "get_patient_age", "kwargs": {"patient_id": "45"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:09:42.334053Z"}
+{"tool": "get_patient_age", "duration_s": 0.001, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:09:42.335027Z"}
+Processing request of type ListToolsRequest
+Processing request of type CallToolRequest
+{"tool": "get_patient_status", "kwargs": {"patient_id": "46"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:09:42.588061Z"}
+{"tool": "get_patient_status", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:09:42.588143Z"}
+Processing request of type CallToolRequest
+{"tool": "get_patient_summary", "kwargs": {"patient_id": "47"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:09:42.810954Z"}
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+{"tool": "get_patient_summary", "duration_s": 1.134, "confidence": 1.0, "confidence_level": "HIGH", "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:09:43.945387Z"}
+Processing request of type CallToolRequest
+{"tool": "get_patient_discharge_draft", "kwargs": {"patient_id": "48"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:09:44.229773Z"}
+{"tool": "get_patient_discharge_draft", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:09:44.229845Z"}
+Processing request of type CallToolRequest
+{"tool": "get_admission_history", "kwargs": {"patient_id": "45"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:09:44.453692Z"}
+{"tool": "get_admission_history", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:09:44.453842Z"}
+Processing request of type CallToolRequest
+{"tool": "get_patients_by_diagnosis", "kwargs": {"icd10_prefix": "428"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:09:44.781829Z"}
+{"tool": "get_patients_by_diagnosis", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:09:44.781982Z"}
+Processing request of type CallToolRequest
+{"tool": "get_cohort_summary", "kwargs": {"icd10_prefix": "434"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:09:44.982770Z"}
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+{"tool": "get_cohort_summary", "duration_s": 1.895, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:09:46.877523Z"}
+Processing request of type CallToolRequest
+{"tool": "get_recently_admitted", "kwargs": {"days": 7}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:09:47.047537Z"}
+{"tool": "get_recently_admitted", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:09:47.047634Z"}
+
+
++-----------------------------------------------------------------------------+
+|                                                                             |
+|                                                                             |
+|                        \u2584\u2580\u2580 \u2584\u2580\u2588 \u2588\u2580\u2580 \u2580\u2588\u2580 \u2588\u2580\u2584\u2580\u2588 \u2588\u2580\u2580 \u2588\u2580\u2588                        |
+|                        \u2588\u2580  \u2588\u2580\u2588 \u2584\u2584\u2588  \u2588  \u2588 \u2580 \u2588 \u2588\u2584\u2584 \u2588\u2580\u2580                        |
+|                                                                             |
+|                                                                             |
+|                                                                             |
+|                                FastMCP 3.2.4                                |
+|                            https://gofastmcp.com                            |
+|                                                                             |
+|                 \U0001f5a5  Server:      agile-hospital, 3.2.4                       |
+|                 \U0001f680 Deploy free: https://horizon.prefect.io                  |
+|                                                                             |
++-----------------------------------------------------------------------------+
+
+
+[05/03/26 22:10:50] INFO     Starting MCP server               transport.py:209
+                             'agile-hospital' with transport                   
+                             'stdio'                                           
+Processing request of type CallToolRequest
+{"tool": "get_patient_age", "kwargs": {"patient_id": "45"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:10:51.566903Z"}
+{"tool": "get_patient_age", "duration_s": 0.001, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:10:51.567784Z"}
+Processing request of type ListToolsRequest
+Processing request of type CallToolRequest
+{"tool": "get_patient_status", "kwargs": {"patient_id": "46"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:10:51.744662Z"}
+{"tool": "get_patient_status", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:10:51.744756Z"}
+Processing request of type CallToolRequest
+{"tool": "get_patient_summary", "kwargs": {"patient_id": "47"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:10:51.966589Z"}
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+{"tool": "get_patient_summary", "duration_s": 1.124, "confidence": 1.0, "confidence_level": "HIGH", "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:10:53.090252Z"}
+Processing request of type CallToolRequest
+{"tool": "get_patient_discharge_draft", "kwargs": {"patient_id": "48"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:10:53.305776Z"}
+{"tool": "get_patient_discharge_draft", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:10:53.305846Z"}
+Processing request of type CallToolRequest
+{"tool": "get_admission_history", "kwargs": {"patient_id": "45"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:10:53.478122Z"}
+{"tool": "get_admission_history", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:10:53.478238Z"}
+Processing request of type CallToolRequest
+{"tool": "get_patients_by_diagnosis", "kwargs": {"icd10_prefix": "428"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:10:53.697877Z"}
+{"tool": "get_patients_by_diagnosis", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:10:53.697968Z"}
+Processing request of type CallToolRequest
+{"tool": "get_cohort_summary", "kwargs": {"icd10_prefix": "434"}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:10:54.019501Z"}
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+{"tool": "get_cohort_summary", "duration_s": 1.628, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:10:55.647078Z"}
+Processing request of type CallToolRequest
+{"tool": "get_recently_admitted", "kwargs": {"days": 7}, "event": "tool_call_start", "level": "info", "timestamp": "2026-05-03T20:10:55.956931Z"}
+{"tool": "get_recently_admitted", "duration_s": 0.0, "confidence": null, "confidence_level": null, "ok": true, "event": "tool_call_end", "level": "info", "timestamp": "2026-05-03T20:10:55.957125Z"}

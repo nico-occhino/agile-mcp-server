@@ -13,7 +13,6 @@ Workflow:
 
 from __future__ import annotations
 from data.repository import get_repository
-_repo = get_repository()
 
 def _get_repo():
     return get_repository()
@@ -91,6 +90,8 @@ def get_patient_summary(patient_id: str) -> dict:
     return {
         "found": True,
         "patient_id": patient_id,
+        "patient_name": f"{demo['name']} {demo['surname']}",
+        "allergy": demo.get("allergy"),
         **uncertain_result.to_dict(),
     }
 
@@ -120,6 +121,8 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     if event is None:
         return {
             "found": True,
+            "patient_id": patient_id,
+            "patient_name": f"{demo['name']} {demo['surname']}",
             "error": "No admission record found. Cannot generate discharge letter.",
         }
 

@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import datetime
 
 from client.parser import parse
+from client.router import route
 from fastmcp.client import Client
 from fastmcp.client.transports.stdio import StdioTransport
 
@@ -54,6 +55,16 @@ async def run_eval():
                     report_lines.append("")
                     continue
 
+                routed = route(ir)
+                if routed is None:
+                    if exp_fail:
+                        report_lines.append("- **Status:** âœ… PASSED (Failed as expected)")
+                        passed += 1
+                    else:
+                        report_lines.append("- **Status:** âŒ FAILED (IR is not routable)")
+                    report_lines.append("")
+                    continue
+
                 if exp_fail:
                     report_lines.append("- **Status:** ❌ FAILED (Expected failure but got valid intent)")
                     report_lines.append("")
@@ -70,9 +81,9 @@ async def run_eval():
                     report_lines.append("")
                     continue
 
-                tool_args = {k: v for k, v in ir_dump.items() if k != "intent"}
+                tool_name, tool_args = routed
                 try:
-                    result = await mcp.call_tool(actual_intent, arguments=tool_args)
+                    result = await mcp.call_tool(tool_name, arguments=tool_args)
                     result_text = result.content[0].text
                     
                     subs_match = True

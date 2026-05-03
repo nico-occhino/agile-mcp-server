@@ -14,7 +14,6 @@ high scores on other patients. Both mean and min are always returned.
 from __future__ import annotations
 from datetime import date, timedelta
 from data.repository import get_repository
-_repo = get_repository()
 
 def _get_repo():
     return get_repository()

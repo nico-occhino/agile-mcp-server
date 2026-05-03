@@ -35,6 +35,40 @@ The server exposes 8 MCP tools. Each tool that uses an LLM internally returns an
 
 ---
 
+## NL2API Orchestrator Layer
+
+The repository now includes a minimal NL2API orchestrator in `orchestrator/`.
+It sits above the existing MCP tool server layer and turns a natural-language
+request into an explicit, validated Intermediate Representation (IR) before any
+clinical capability is executed.
+
+Current Phase 1 flow:
+
+```text
+Natural language query
+      -> rule-based parser
+      -> Pydantic IR
+      -> validator
+      -> router
+      -> curated MCP feature function
+      -> rendered Italian response
+```
+
+The parser is deterministic and rule-based for Phase 1 tests; it does not call
+an LLM or any external service. This keeps the audit point visible while making
+the future replacement point clear: a later LLM parser should produce the same
+Pydantic IR catalog, then pass through the same validator and router. The MCP
+tools remain the allowed capability layer, so natural language never maps
+directly to SQL or unrestricted database access.
+
+Run the local demo with:
+
+```bash
+python scripts/demo_orchestrator.py
+```
+
+---
+
 ## The uncertainty layer
 
 Standard LLM pipelines return one answer with no indication of confidence. In a clinical setting, a confidently-wrong discharge summary is more dangerous than a system that says "I'm not sure, please verify."
