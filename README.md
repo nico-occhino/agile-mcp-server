@@ -69,6 +69,31 @@ python scripts/demo_orchestrator.py
 
 ---
 
+## RAG / Retrieval Layer
+
+The repository also includes a lightweight retrieval layer in `retrieval/` and
+`rag/`. RAG is used only for domain context: templates, glossary entries, tool
+documentation, and safety rules. Patient facts still come only from curated MCP
+tools, the mock repository, or future Agile APIs.
+
+Current Phase 1 retrieval uses a deterministic local keyword retriever with no
+external services or vector database. The `Retriever` interface is intentionally
+backend-agnostic so future implementations can plug in FAISS, pgvector, Qdrant,
+or learned-index prototypes from the Brno traineeship.
+
+This keeps filtered or adaptive retrieval experiments behind the retrieval
+interface, without touching the safety-critical clinical API path. The
+discharge draft workflow now injects retrieved domain context into the LLM
+prompt while keeping structured patient facts separate.
+
+Run the local RAG demo with:
+
+```bash
+python scripts/demo_rag.py
+```
+
+---
+
 ## The uncertainty layer
 
 Standard LLM pipelines return one answer with no indication of confidence. In a clinical setting, a confidently-wrong discharge summary is more dangerous than a system that says "I'm not sure, please verify."

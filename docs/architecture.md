@@ -17,6 +17,17 @@ Natural language query
   -> rendered response
 ```
 
+## RAG-Augmented Generation Flow
+
+```text
+Natural language query
+  -> IR / validator / router
+  -> clinical tool retrieves patient facts
+  -> RAG retriever retrieves domain context
+  -> LLM generation uses patient facts + retrieved context
+  -> uncertainty + response
+```
+
 ## Safety Boundaries
 
 - The LLM should not directly access the database, SQL, or hospital APIs.
@@ -27,3 +38,11 @@ Natural language query
 - The current parser is deterministic only for Phase 1. A future LLM parser can
   replace it, but it should still emit the same Pydantic IR and pass through the
   same validator and router.
+- APIs and curated tools are the source of clinical facts.
+- RAG is not used to retrieve live patient records.
+- RAG is not a safety guarantee; it only supplies domain context such as
+  templates, glossary entries, and safety reminders.
+- Uncertainty confidence measures semantic self-consistency, not clinical
+  correctness.
+- Learned indexing belongs behind the retriever interface, not inside patient
+  lookup or clinical execution logic.

@@ -13,6 +13,7 @@ Workflow:
 
 from __future__ import annotations
 from data.repository import get_repository
+from rag.context_builder import build_rag_context
 
 def _get_repo():
     return get_repository()
@@ -127,6 +128,11 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
         }
 
     patient_data_str = _format_patient_for_prompt(demo, event)
+    rag_context = build_rag_context(
+        "discharge summary template allergy safety diagnosis follow-up",
+        top_k=3,
+        filters={"language": "it"},
+    )
 
     # Step A: structured extraction
     flags: ClinicalFlags = call_llm_structured(
@@ -156,6 +162,11 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     )
 
     discharge_user = f"""
+    Domain context retrieved from RAG.
+    This context contains templates, glossary, and safety rules only.
+    It is NOT a source of patient facts:
+    {rag_context['context_text']}
+
     Patient: {demo['name']} {demo['surname']}, born {demo['birthDate'][:10]}
     Primary diagnosis: {flags.primary_diagnosis_description}
     Active conditions: {', '.join(flags.active_conditions) or 'none documented'}
@@ -182,6 +193,18 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
         "patient_id": patient_id,
         "patient_name": f"{demo['name']} {demo['surname']}",
         "extracted_flags": flags.model_dump(),
+        "rag_context": {
+            "query": rag_context["query"],
+            "sources": [
+                {
+                    "chunk_id": chunk["chunk_id"],
+                    "source": chunk["source"],
+                    "score": chunk["score"],
+                    "metadata": chunk["metadata"],
+                }
+                for chunk in rag_context["chunks"]
+            ],
+        },
         **uncertain_result.to_dict(),
     }
 

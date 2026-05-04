@@ -28,7 +28,7 @@ eval = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["data*", "features*", "workflow*", "orchestrator*"]
+include = ["data*", "features*", "workflow*", "orchestrator*", "retrieval*", "rag*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
