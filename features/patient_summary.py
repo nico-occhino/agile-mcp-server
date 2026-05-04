@@ -135,7 +135,8 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     )
 
     # Step A: structured extraction
-    flags: ClinicalFlags = call_llm_structured(
+    try:
+        flags: ClinicalFlags = call_llm_structured(
         system=(
             "You are a clinical data extractor. Extract key clinical flags from "
             "the patient data as structured JSON. Be conservative — only include "
@@ -145,6 +146,16 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
         schema=ClinicalFlags,
         temperature=0.0,
     )
+
+    except Exception as exc:
+        return {
+            "found": True,
+            "patient_id": patient_id,
+            "patient_name": f"{demo['name']} {demo['surname']}",
+            "error": "Structured clinical flag extraction failed. Cannot generate discharge letter.",
+            "details": str(exc),
+            "rag_context": _rag_context_metadata(rag_context),
+        }
 
     discharge_system = """
     You are a clinical documentation specialist. Write a professional discharge
@@ -193,19 +204,23 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
         "patient_id": patient_id,
         "patient_name": f"{demo['name']} {demo['surname']}",
         "extracted_flags": flags.model_dump(),
-        "rag_context": {
-            "query": rag_context["query"],
-            "sources": [
-                {
-                    "chunk_id": chunk["chunk_id"],
-                    "source": chunk["source"],
-                    "score": chunk["score"],
-                    "metadata": chunk["metadata"],
-                }
-                for chunk in rag_context["chunks"]
-            ],
-        },
+        "rag_context": _rag_context_metadata(rag_context),
         **uncertain_result.to_dict(),
+    }
+
+
+def _rag_context_metadata(rag_context: dict) -> dict:
+    return {
+        "query": rag_context["query"],
+        "sources": [
+            {
+                "chunk_id": chunk["chunk_id"],
+                "source": chunk["source"],
+                "score": chunk["score"],
+                "metadata": chunk["metadata"],
+            }
+            for chunk in rag_context["chunks"]
+        ],
     }
 
 

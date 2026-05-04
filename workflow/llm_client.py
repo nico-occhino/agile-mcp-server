@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import os
 from typing import Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -157,6 +157,47 @@ def call_llm_structured(
     the system prompt and fall back to manual parsing.
     """
     schema_json = schema.model_json_schema()
+    strict_instruction = (
+        "Return ONLY a JSON object that is an INSTANCE matching the target "
+        "schema. Do not return the schema itself, properties, examples, "
+        "markdown, code fences, or explanatory text."
+    )
+    augmented_system = (
+        f"{system}\n\n"
+        f"{strict_instruction}\n\n"
+        f"Use this Pydantic JSON schema only to know the required fields:\n"
+        f"{schema_json}\n"
+        f"No preamble, no markdown fences, no explanation - raw JSON only."
+    )
+    strict_user = f"{user}\n\n{strict_instruction}"
+
+    last_error: ValidationError | None = None
+    for attempt in range(2):
+        retry_note = ""
+        if last_error is not None:
+            retry_note = (
+                "\n\nThe previous response failed Pydantic validation:\n"
+                f"{last_error}\n"
+                "Return a corrected JSON object INSTANCE only."
+            )
+
+        raw = call_llm(
+            system=augmented_system,
+            user=f"{strict_user}{retry_note}",
+            temperature=temperature,
+            model=model,
+        )
+        raw = _strip_json_fences(raw)
+        try:
+            return schema.model_validate_json(raw)
+        except ValidationError as exc:
+            last_error = exc
+            if attempt == 1:
+                raise
+
+    raise last_error  # pragma: no cover - defensive; loop always returns or raises
+
+    schema_json = schema.model_json_schema()
     augmented_system = (
         f"{system}\n\n"
         f"Respond ONLY with a JSON object that strictly follows this schema:\n"
@@ -172,3 +213,13 @@ def call_llm_structured(
     # Strip accidental markdown fences from models that ignore instructions
     raw = raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
     return schema.model_validate_json(raw)
+
+
+def _strip_json_fences(raw: str) -> str:
+    return (
+        raw.strip()
+        .removeprefix("```json")
+        .removeprefix("```")
+        .removesuffix("```")
+        .strip()
+    )

@@ -55,3 +55,25 @@ def test_discharge_draft_includes_rag_context_without_real_llm(monkeypatch):
     assert {"chunk_id", "source", "score", "metadata"}.issubset(
         result["rag_context"]["sources"][0]
     )
+
+
+def test_discharge_draft_returns_controlled_error_on_structured_failure(monkeypatch):
+    from features import patient_summary
+
+    def raise_structured_failure(**kwargs):
+        raise ValueError("mock structured validation failure")
+
+    monkeypatch.setattr(
+        patient_summary,
+        "call_llm_structured",
+        raise_structured_failure,
+    )
+
+    result = patient_summary.get_patient_discharge_draft("45")
+
+    assert result["found"] is True
+    assert result["patient_id"] == "45"
+    assert result["patient_name"] == "Mario Rossi"
+    assert "Structured clinical flag extraction failed" in result["error"]
+    assert "mock structured validation failure" in result["details"]
+    assert result["rag_context"]["sources"]
