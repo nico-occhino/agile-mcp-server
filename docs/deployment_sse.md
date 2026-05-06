@@ -29,6 +29,14 @@ npx @modelcontextprotocol/inspector
 Configure it to connect to the SSE endpoint above, then confirm that tools such
 as `get_patient_status` and `evaluate_clinical_output_guardrail` appear.
 
+For `evaluate_clinical_output_guardrail`, MCP Inspector should show these tool
+annotations:
+
+- `readOnlyHint: true`
+- `destructiveHint: false`
+- `idempotentHint: true`
+- `openWorldHint: false`
+
 ## Aria Configuration
 
 When Agile provides the target test server, Aria should store this MCP server's

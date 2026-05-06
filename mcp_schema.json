@@ -16,7 +16,8 @@
           "patient_id"
         ],
         "type": "object"
-      }
+      },
+      "annotations": null
     },
     {
       "name": "get_patient_status",
@@ -33,7 +34,8 @@
           "patient_id"
         ],
         "type": "object"
-      }
+      },
+      "annotations": null
     },
     {
       "name": "get_admission_history",
@@ -50,7 +52,8 @@
           "patient_id"
         ],
         "type": "object"
-      }
+      },
+      "annotations": null
     },
     {
       "name": "get_patient_summary",
@@ -67,7 +70,8 @@
           "patient_id"
         ],
         "type": "object"
-      }
+      },
+      "annotations": null
     },
     {
       "name": "get_patient_discharge_draft",
@@ -84,7 +88,8 @@
           "patient_id"
         ],
         "type": "object"
-      }
+      },
+      "annotations": null
     },
     {
       "name": "get_patients_by_diagnosis",
@@ -101,7 +106,8 @@
           "diagnosis_code_prefix"
         ],
         "type": "object"
-      }
+      },
+      "annotations": null
     },
     {
       "name": "get_cohort_summary",
@@ -118,7 +124,8 @@
           "diagnosis_code_prefix"
         ],
         "type": "object"
-      }
+      },
+      "annotations": null
     },
     {
       "name": "get_recently_admitted",
@@ -133,7 +140,8 @@
           }
         },
         "type": "object"
-      }
+      },
+      "annotations": null
     },
     {
       "name": "evaluate_clinical_output_guardrail",
@@ -162,6 +170,12 @@
           "task_type"
         ],
         "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
       }
     }
   ]

@@ -159,7 +159,18 @@ mcp.tool()(instrumented("get_cohort_summary")(get_cohort_summary))
 mcp.tool()(instrumented("get_recently_admitted")(get_recently_admitted))
 
 # --- Guardrail/evaluation tools (no patient data access) ---
-mcp.tool()(instrumented("evaluate_clinical_output_guardrail")(evaluate_clinical_output_guardrail))
+mcp.tool(
+    annotations={
+        # This tool is deterministic, local, and policy-only. These hints help
+        # MCP clients such as Inspector or Aria understand that calling it does
+        # not read patient data, mutate state, call external services, or depend
+        # on open-world side effects.
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)(instrumented("evaluate_clinical_output_guardrail")(evaluate_clinical_output_guardrail))
 
 
 # ---------------------------------------------------------------------------

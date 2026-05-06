@@ -24,7 +24,8 @@ async def export():
         schema_dump["tools"].append({
             "name": t.name,
             "description": t.description,
-            "inputSchema": t.inputSchema
+            "inputSchema": t.inputSchema,
+            "annotations": t.annotations.model_dump(exclude_none=True) if t.annotations else None,
         })
         
     out_path = Path(__file__).parent.parent / "mcp_schema.json"
