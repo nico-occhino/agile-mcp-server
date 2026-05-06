@@ -37,9 +37,9 @@ def parse_query_to_ir(query: str) -> IR:
             return UnknownIR(reason="Richiesta di stato paziente senza ID numerico.")
         return GetPatientStatusIR(patient_id=patient_id)
 
-    diagnosis_prefix = _extract_diagnosis_prefix(normalized)
-    if diagnosis_prefix is not None:
-        return GetPatientsByDiagnosisIR(diagnosis_code_prefix=diagnosis_prefix)
+    diagnosis_code_prefix = _extract_diagnosis_code_prefix(normalized)
+    if diagnosis_code_prefix is not None:
+        return GetPatientsByDiagnosisIR(diagnosis_code_prefix=diagnosis_code_prefix)
 
     days = _extract_recent_admission_days(normalized)
     if days is not None:
@@ -75,7 +75,7 @@ def _looks_like_patient_summary(text: str) -> bool:
     )
 
 
-def _extract_diagnosis_prefix(text: str) -> str | None:
+def _extract_diagnosis_code_prefix(text: str) -> str | None:
     match = re.search(
         r"\b(?:pazienti|patients)\s+(?:con|with)\s+diagnos(?:i|is)\s+(\d+)\b",
         text,

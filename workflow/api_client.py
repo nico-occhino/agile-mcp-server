@@ -19,7 +19,7 @@ to:
 EXPECTED INTERFACE (fill in when API contracts arrive)
 ------------------------------------------------------
 async def get_patient(patient_id: str) -> dict | None: ...
-async def list_patients_by_diagnosis(icd10_prefix: str) -> list[dict]: ...
+async def list_patients_by_diagnosis(diagnosis_code_prefix: str) -> list[dict]: ...
 async def get_recently_admitted(days: int) -> list[dict]: ...
 
 WHY ASYNC
@@ -50,8 +50,8 @@ async def get_patient(patient_id: str) -> dict | None:
     )
 
 
-async def list_patients_by_diagnosis(icd10_prefix: str) -> list[dict]:
-    """Fetch patients by ICD-10 diagnosis prefix."""
+async def list_patients_by_diagnosis(diagnosis_code_prefix: str) -> list[dict]:
+    """Fetch patients by numeric diagnosis-code prefix."""
     raise NotImplementedError(
         "Phase 2 not started. Use data.mock_store.list_patients_by_diagnosis() for now."
     )

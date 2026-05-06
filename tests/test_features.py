@@ -138,6 +138,7 @@ class TestCohortWorkflowStructure:
     def test_get_patients_by_diagnosis_found(self):
         from features.cohort import get_patients_by_diagnosis
         result = get_patients_by_diagnosis("428")
+        assert result["diagnosis_code_prefix"] == "428"
         assert result["total_found"] >= 1
         assert len(result["patients"]) == result["total_found"]
         first = result["patients"][0]
@@ -146,6 +147,7 @@ class TestCohortWorkflowStructure:
     def test_get_patients_by_diagnosis_not_found(self):
         from features.cohort import get_patients_by_diagnosis
         result = get_patients_by_diagnosis("Z99")
+        assert result["diagnosis_code_prefix"] == "Z99"
         assert result["total_found"] == 0
         assert result["patients"] == []
         assert "message" in result

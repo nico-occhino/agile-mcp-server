@@ -148,7 +148,7 @@ def call_llm_structured(
 
     Example schema:
         class DiagnosisExtraction(BaseModel):
-            icd10_code: str
+            diagnosis_code: str
             description: str
             confidence: float   # self-reported by the LLM, 0–1
 

@@ -76,7 +76,7 @@ def _render_patient_summary(result: dict) -> str:
 
 def _render_diagnosis_cohort(result: dict) -> str:
     lines = [
-        f"Pazienti trovati per diagnosi {result.get('icd10_prefix', '')}: {result.get('total_found', 0)}"
+        f"Pazienti trovati per diagnosi {result.get('diagnosis_code_prefix', '')}: {result.get('total_found', 0)}"
     ]
     patients = result.get("patients", [])
     if not patients and result.get("message"):

@@ -40,7 +40,7 @@ def build_parser_system_prompt() -> str:
             if field_name == "patient_id":
                 example[field_name] = patient_ids[p_idx % len(patient_ids)]
                 p_idx += 1
-            elif field_name == "diagnosis_prefix":
+            elif field_name == "diagnosis_code_prefix":
                 example[field_name] = diagnosis_codes[d_idx % len(diagnosis_codes)]
                 d_idx += 1
             elif field_name == "days":
@@ -61,7 +61,7 @@ Gli intenti validi sono:
 
 REGOLE IMPORTANTI:
 - I patient_id sono stringhe numeriche: "45", "46", "47", "48", ecc.
-- I diagnosis_prefix sono codici ICD-9-CM numerici ministeriali italiani:
+- I diagnosis_code_prefix sono codici diagnosi numerici ministeriali italiani:
     428 = scompenso cardiaco (heart failure)
     434 = ictus (stroke)
     012 = trauma ortopedico

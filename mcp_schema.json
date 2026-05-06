@@ -92,13 +92,13 @@
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
-          "icd10_prefix": {
+          "diagnosis_code_prefix": {
             "type": "string",
-            "description": "numeric prefix (e.g. \"428\" for heart failure, \"434\" for stroke)"
+            "description": "numeric diagnosis-code prefix (e.g. \"428\" for heart failure, \"434\" for stroke)"
           }
         },
         "required": [
-          "icd10_prefix"
+          "diagnosis_code_prefix"
         ],
         "type": "object"
       }
@@ -109,13 +109,13 @@
       "inputSchema": {
         "additionalProperties": false,
         "properties": {
-          "icd10_prefix": {
+          "diagnosis_code_prefix": {
             "type": "string",
-            "description": "numeric diagnosis prefix (e.g. \"428\", \"434\")"
+            "description": "numeric diagnosis-code prefix (e.g. \"428\", \"434\")"
           }
         },
         "required": [
-          "icd10_prefix"
+          "diagnosis_code_prefix"
         ],
         "type": "object"
       }
@@ -132,6 +132,35 @@
             "description": "look-back window in days (default: 7)"
           }
         },
+        "type": "object"
+      }
+    },
+    {
+      "name": "evaluate_clinical_output_guardrail",
+      "description": "Evaluate whether a generated clinical output should be accepted, reviewed,\nor rejected.\n\nThis tool does not access patient data and does not call the LLM. It only\napplies the uncertainty-aware guardrail policy to a task type and confidence\nscore. The confidence value is a semantic self-consistency score from\nrepeated LLM sampling; it is not a guarantee of clinical truth.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "task_type": {
+            "type": "string",
+            "description": "Clinical task category, e.g. patient_summary,\ndischarge_draft, medication_or_therapy, administrative_summary."
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional semantic self-consistency score in [0, 1]."
+          }
+        },
+        "required": [
+          "task_type"
+        ],
         "type": "object"
       }
     }

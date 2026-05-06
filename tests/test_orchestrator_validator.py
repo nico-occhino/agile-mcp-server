@@ -12,7 +12,7 @@ def test_validate_patient_id_must_be_numeric():
     assert issues == ["patient_id deve essere numerico."]
 
 
-def test_validate_diagnosis_prefix_must_be_numeric():
+def test_validate_diagnosis_code_prefix_must_be_numeric():
     issues = validate_ir(GetPatientsByDiagnosisIR(diagnosis_code_prefix="Z99"))
     assert issues == ["diagnosis_code_prefix deve essere numerico."]
 

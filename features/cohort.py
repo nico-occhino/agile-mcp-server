@@ -25,16 +25,16 @@ import numpy as np
 SAFETY_THRESHOLD = 0.50
 
 
-def get_patients_by_diagnosis(icd10_prefix: str) -> dict:
+def get_patients_by_diagnosis(diagnosis_code_prefix: str) -> dict:
     """
     Return all patients whose primary diagnosis code starts with the given prefix.
 
     Args:
-        icd10_prefix: numeric prefix (e.g. "428" for heart failure, "434" for stroke)
+        diagnosis_code_prefix: numeric diagnosis-code prefix (e.g. "428" for heart failure, "434" for stroke)
     """
-    matching = _get_repo().list_patients_by_diagnosis(icd10_prefix)
+    matching = _get_repo().list_patients_by_diagnosis(diagnosis_code_prefix)
     if not matching:
-        return {"icd10_prefix": icd10_prefix, "total_found": 0, "patients": [], "message": f"No patients found with diagnosis code starting with '{icd10_prefix}'."}
+        return {"diagnosis_code_prefix": diagnosis_code_prefix, "total_found": 0, "patients": [], "message": f"No patients found with diagnosis code starting with '{diagnosis_code_prefix}'."}
     patients_detail = []
     for p in matching:
         patient = p.get("patient")
@@ -42,20 +42,20 @@ def get_patients_by_diagnosis(icd10_prefix: str) -> dict:
             continue
         status = get_patient_status(patient["internalId"])
         patients_detail.append({"patient_id": patient["internalId"], "full_name": f"{patient['name']} {patient['surname']}", "data_nascita": patient["birthDate"][:10], **{k: v for k, v in status.items() if k not in ("found", "patient_id")}})
-    return {"icd10_prefix": icd10_prefix, "total_found": len(patients_detail), "patients": patients_detail}
+    return {"diagnosis_code_prefix": diagnosis_code_prefix, "total_found": len(patients_detail), "patients": patients_detail}
 
 
-def get_cohort_summary(icd10_prefix: str) -> dict:
+def get_cohort_summary(diagnosis_code_prefix: str) -> dict:
     """
     Generate a cohort-level summary with per-patient LLM summaries
     and a gated aggregate confidence score.
 
     Args:
-        icd10_prefix: numeric diagnosis prefix (e.g. "428", "434")
+        diagnosis_code_prefix: numeric diagnosis-code prefix (e.g. "428", "434")
     """
-    matching = _get_repo().list_patients_by_diagnosis(icd10_prefix)
+    matching = _get_repo().list_patients_by_diagnosis(diagnosis_code_prefix)
     if not matching:
-        return {"icd10_prefix": icd10_prefix, "total_found": 0, "cohort_narrative": f"No patients found with prefix '{icd10_prefix}'.", "patients": [], "cohort_confidence": None, "flagged_patients": []}
+        return {"diagnosis_code_prefix": diagnosis_code_prefix, "total_found": 0, "cohort_narrative": f"No patients found with prefix '{diagnosis_code_prefix}'.", "patients": [], "cohort_confidence": None, "flagged_patients": []}
 
     per_patient = []
     flagged = []
@@ -100,12 +100,12 @@ def get_cohort_summary(icd10_prefix: str) -> dict:
                 "(4–6 sentences) characterizing this patient cohort: common patterns, notable "
                 "variations, and concerns a department head should be aware of. "
                 "Do not list patients by name. Focus on patterns."),
-        user=(f"Diagnosis prefix: {icd10_prefix}\nPatients: {len(per_patient)}\n\n"
+        user=(f"Diagnosis code prefix: {diagnosis_code_prefix}\nPatients: {len(per_patient)}\n\n"
               f"Per-patient summaries:\n{summaries_block}\n\nWrite the cohort narrative."),
         temperature=0.4,
     )
 
-    return {"icd10_prefix": icd10_prefix, "total_found": len(per_patient), "cohort_confidence": round(cohort_confidence, 3), "cohort_confidence_mean": round(cohort_confidence_mean, 3), "cohort_confidence_min": round(cohort_confidence_min, 3), "cohort_confidence_note": cohort_confidence_note, "flagged_patients": flagged, "cohort_narrative": cohort_narrative, "patients": per_patient}
+    return {"diagnosis_code_prefix": diagnosis_code_prefix, "total_found": len(per_patient), "cohort_confidence": round(cohort_confidence, 3), "cohort_confidence_mean": round(cohort_confidence_mean, 3), "cohort_confidence_min": round(cohort_confidence_min, 3), "cohort_confidence_note": cohort_confidence_note, "flagged_patients": flagged, "cohort_narrative": cohort_narrative, "patients": per_patient}
 
 
 def get_recently_admitted(days: int = 7) -> dict:

@@ -39,14 +39,14 @@
 - query: "Elenca i pazienti con scompenso cardiaco (428)"
   expected_intent: "get_patients_by_diagnosis"
   expected_kwargs:
-    diagnosis_prefix: "428"
+    diagnosis_code_prefix: "428"
   expected_substrings:
     - "Giovanna"
 
 - query: "Riassumi la coorte di pazienti con ictus (434)"
   expected_intent: "get_cohort_summary"
   expected_kwargs:
-    diagnosis_prefix: "434"
+    diagnosis_code_prefix: "434"
   expected_substrings:
     - "Luca"
 

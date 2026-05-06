@@ -32,8 +32,8 @@ class TestIRRouter:
         assert r == ("get_patient_age", {"patient_id": "45"})
 
     def test_route_cohort_summary(self):
-        r = route(GetCohortSummaryIR(intent="get_cohort_summary", diagnosis_prefix="428"))
-        assert r == ("get_cohort_summary", {"icd10_prefix": "428"})
+        r = route(GetCohortSummaryIR(intent="get_cohort_summary", diagnosis_code_prefix="428"))
+        assert r == ("get_cohort_summary", {"diagnosis_code_prefix": "428"})
 
     def test_route_recently_admitted_default_days(self):
         r = route(GetRecentlyAdmittedIR(intent="get_recently_admitted"))

@@ -298,7 +298,7 @@ def list_patients() -> list[dict]:
     ]
 
 
-def list_patients_by_diagnosis(diagnosis_prefix: str) -> list[dict]:
+def list_patients_by_diagnosis(diagnosis_code_prefix: str) -> list[dict]:
     """
     Return full records for patients whose primary diagnosis code
     starts with the given prefix.
@@ -307,7 +307,7 @@ def list_patients_by_diagnosis(diagnosis_prefix: str) -> list[dict]:
     not ICD-10 alphanumeric codes ("I21.9"). Prefix search still works:
     list_patients_by_diagnosis("428") finds all heart failure variants.
     """
-    clean_prefix = diagnosis_prefix.strip()
+    clean_prefix = diagnosis_code_prefix.strip()
     results = []
     for record in PATIENTS.values():
         event = record.get("event")

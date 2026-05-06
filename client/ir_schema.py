@@ -45,12 +45,12 @@ class GetAdmissionHistoryIR(BaseModel):
 
 class GetPatientsByDiagnosisIR(BaseModel):
     intent: Literal["get_patients_by_diagnosis"] = "get_patients_by_diagnosis"
-    diagnosis_prefix: str
+    diagnosis_code_prefix: str
 
 
 class GetCohortSummaryIR(BaseModel):
     intent: Literal["get_cohort_summary"] = "get_cohort_summary"
-    diagnosis_prefix: str
+    diagnosis_code_prefix: str
 
 
 class GetRecentlyAdmittedIR(BaseModel):

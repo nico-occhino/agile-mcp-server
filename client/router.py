@@ -36,8 +36,8 @@ def route(ir: IR) -> tuple[str, dict] | None:
         GetPatientSummaryIR:        lambda r: ("get_patient_summary",         {"patient_id": r.patient_id}),
         GetPatientDischargeDraftIR: lambda r: ("get_patient_discharge_draft", {"patient_id": r.patient_id}),
         GetAdmissionHistoryIR:      lambda r: ("get_admission_history",       {"patient_id": r.patient_id}),
-        GetPatientsByDiagnosisIR:   lambda r: ("get_patients_by_diagnosis",   {"icd10_prefix": r.diagnosis_prefix}),
-        GetCohortSummaryIR:         lambda r: ("get_cohort_summary",          {"icd10_prefix": r.diagnosis_prefix}),
+        GetPatientsByDiagnosisIR:   lambda r: ("get_patients_by_diagnosis",   {"diagnosis_code_prefix": r.diagnosis_code_prefix}),
+        GetCohortSummaryIR:         lambda r: ("get_cohort_summary",          {"diagnosis_code_prefix": r.diagnosis_code_prefix}),
         GetRecentlyAdmittedIR:      lambda r: ("get_recently_admitted",       {"days": r.days}),
     }
 
