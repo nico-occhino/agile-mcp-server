@@ -25,7 +25,9 @@ Natural language query
   -> clinical tool retrieves patient facts
   -> RAG retriever retrieves domain context
   -> LLM generation uses patient facts + retrieved context
-  -> uncertainty + response
+  -> uncertainty estimation
+  -> risk-based guardrail decision
+  -> response
 ```
 
 ## Safety Boundaries
@@ -46,3 +48,7 @@ Natural language query
   correctness.
 - Learned indexing belongs behind the retriever interface, not inside patient
   lookup or clinical execution logic.
+- LLM outputs are untrusted until evaluated by validation, uncertainty, and
+  risk-based guardrails.
+- Aria integration should use MCP over a configured host and port; the FastAPI
+  wrapper is only a Swagger/debug convenience.

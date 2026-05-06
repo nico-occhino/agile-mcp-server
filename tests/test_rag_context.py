@@ -16,6 +16,8 @@ def test_discharge_draft_includes_rag_context_without_real_llm(monkeypatch):
     from features import patient_summary
 
     class FakeUncertainResult:
+        confidence = 1.0
+
         def to_dict(self):
             return {
                 "result": "Bozza di dimissione simulata.",

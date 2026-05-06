@@ -73,6 +73,7 @@ configure_logging()
 from workflow.instrumentation import instrumented
 
 from fastmcp import FastMCP
+from guardrails.decision import evaluate_guardrail
 
 # Import all feature functions
 from features.patient_lookup import (
@@ -89,6 +90,30 @@ from features.cohort import (
     get_cohort_summary,
     get_recently_admitted,
 )
+
+
+def evaluate_clinical_output_guardrail(
+    task_type: str,
+    confidence: float | None = None,
+) -> dict:
+    """
+    Evaluate whether a generated clinical output should be accepted, reviewed,
+    or rejected.
+
+    This tool does not access patient data and does not call the LLM. It only
+    applies the uncertainty-aware guardrail policy to a task type and confidence
+    score. The confidence value is a semantic self-consistency score from
+    repeated LLM sampling; it is not a guarantee of clinical truth.
+
+    Args:
+        task_type: Clinical task category, e.g. patient_summary,
+            discharge_draft, medication_or_therapy, administrative_summary.
+        confidence: Optional semantic self-consistency score in [0, 1].
+    """
+    return evaluate_guardrail(
+        task_type=task_type,
+        confidence=confidence,
+    ).model_dump()
 
 # ---------------------------------------------------------------------------
 # Server instance
@@ -132,6 +157,9 @@ mcp.tool()(instrumented("get_patient_discharge_draft")(get_patient_discharge_dra
 mcp.tool()(instrumented("get_patients_by_diagnosis")(get_patients_by_diagnosis))
 mcp.tool()(instrumented("get_cohort_summary")(get_cohort_summary))
 mcp.tool()(instrumented("get_recently_admitted")(get_recently_admitted))
+
+# --- Guardrail/evaluation tools (no patient data access) ---
+mcp.tool()(instrumented("evaluate_clinical_output_guardrail")(evaluate_clinical_output_guardrail))
 
 
 # ---------------------------------------------------------------------------

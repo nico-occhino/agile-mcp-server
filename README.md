@@ -4,15 +4,15 @@
 
 Curricular internship at Agile S.r.l., Catania.
 Supervisors: Prof. Morana (UniCT), Ing. Nocita (CTO Agile).
-Authors: Nicolò Carmelo Occhino, Francesca Calcagno.
+Author: Nicolò Carmelo Occhino
 
 ---
 
 ## What this is
 
-A hospital clinician types a natural-language request. This server translates it into a safe, pre-approved API call against Agile's hospital management system and returns a structured answer — with a calibrated confidence score.
+A hospital clinician types a natural-language request. This server translates it into a safe, pre-approved API call against Agile's hospital management system and returns a structured answer with a calibrated confidence score.
 
-The key design choice, explained by Prof. Morana in the kick-off meeting: **NL2API, not Text-to-SQL**. Instead of letting an LLM generate raw SQL (which opens a SQL-injection surface in a healthcare context), the LLM selects from a finite catalog of pre-hardened API tools. New capability requires a deliberate act by a human engineer, not a cleverly-worded prompt.
+The key design choice, **NL2API, not Text-to-SQL**. Instead of letting an LLM generate raw SQL (which opens a SQL-injection surface in a healthcare context), the LLM selects from a finite catalog of pre-hardened API tools. New capability requires a deliberate act by a human engineer, not a cleverly-worded prompt.
 
 ---
 
@@ -90,6 +90,76 @@ Run the local RAG demo with:
 
 ```bash
 python scripts/demo_rag.py
+```
+
+---
+
+## Uncertainty-Aware Guardrail Layer
+
+The project now includes `guardrails/`, a small policy layer that turns LLM
+confidence into an auditable decision:
+
+- `ACCEPT`
+- `REQUIRES_REVIEW`
+- `REJECT`
+
+Healthcare tasks do not all have the same acceptable uncertainty. A lightweight
+administrative summary can use a lower threshold, while clinical summaries,
+discharge drafts, and medication or therapy related outputs require stricter
+thresholds. The initial policy uses dynamic thresholds by risk level:
+
+| Risk | Threshold |
+|---|---:|
+| LOW | 0.60 |
+| MEDIUM | 0.75 |
+| HIGH | 0.85 |
+| CRITICAL | 0.95 |
+
+Confidence is semantic self-consistency from repeated LLM sampling, not proof
+of clinical truth. The guardrail layer is designed for Agile's Aria
+orchestrator: generated outputs can be accepted, routed to human review, or
+rejected with explicit reasons and metadata.
+
+Run the local guardrail evaluation:
+
+```bash
+python scripts/eval_guardrails.py
+```
+
+---
+
+## Remote MCP / Aria Integration
+
+MCP remains the target integration interface. Agile's Aria orchestrator can
+connect to MCP servers configured by host and port.
+
+Run this server locally over SSE:
+
+```bash
+fastmcp run server.py --transport sse --port 8001
+```
+
+Local SSE endpoint:
+
+```text
+http://127.0.0.1:8001/sse
+```
+
+On Agile infrastructure, the final host and port should be configured in
+Aria's MCP server table. The optional FastAPI wrapper is separate and exists
+only for Swagger/demo/debug; it does not replace MCP and does not duplicate
+clinical business logic.
+
+Swagger demo:
+
+```bash
+uvicorn api_demo:app --reload --port 8000
+```
+
+Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
 ```
 
 ---

@@ -12,7 +12,10 @@ Workflow:
 """
 
 from __future__ import annotations
+import time
 from data.repository import get_repository
+from guardrails.decision import evaluate_guardrail
+from guardrails.evaluation import measure_latency_ms
 from rag.context_builder import build_rag_context
 
 def _get_repo():
@@ -77,6 +80,7 @@ def get_patient_summary(patient_id: str) -> dict:
     event = record.get("event")
     patient_data_str = _format_patient_for_prompt(demo, event)
 
+    generation_start = time.perf_counter()
     samples = call_llm_n_times(
         system=SUMMARY_SYSTEM,
         user=SUMMARY_USER_TEMPLATE.format(patient_data=patient_data_str),
@@ -87,12 +91,22 @@ def get_patient_summary(patient_id: str) -> dict:
         samples=samples,
         mode="freetext",
     )
+    generation_end = time.perf_counter()
+    guardrail = evaluate_guardrail(
+        task_type="patient_summary",
+        confidence=uncertain_result.confidence,
+        metadata={
+            "latency_ms": measure_latency_ms(generation_start, generation_end),
+            "uncertainty_samples": len(samples),
+        },
+    )
 
     return {
         "found": True,
         "patient_id": patient_id,
         "patient_name": f"{demo['name']} {demo['surname']}",
         "allergy": demo.get("allergy"),
+        "guardrail": guardrail.model_dump(),
         **uncertain_result.to_dict(),
     }
 
@@ -148,6 +162,12 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     )
 
     except Exception as exc:
+        guardrail = evaluate_guardrail(
+            task_type="discharge_draft",
+            confidence=None,
+            validation_issues=["Structured clinical flag extraction failed."],
+            metadata={"stage": "clinical_flags_extraction"},
+        )
         return {
             "found": True,
             "patient_id": patient_id,
@@ -155,6 +175,7 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
             "error": "Structured clinical flag extraction failed. Cannot generate discharge letter.",
             "details": str(exc),
             "rag_context": _rag_context_metadata(rag_context),
+            "guardrail": guardrail.model_dump(),
         }
 
     discharge_system = """
@@ -191,6 +212,7 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     Write the clinical summary section of the discharge letter.
     """
 
+    generation_start = time.perf_counter()
     samples = call_llm_n_times(
         system=discharge_system,
         user=discharge_user,
@@ -198,6 +220,15 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
     )
 
     uncertain_result = build_uncertain_result(samples=samples, mode="freetext")
+    generation_end = time.perf_counter()
+    guardrail = evaluate_guardrail(
+        task_type="discharge_draft",
+        confidence=uncertain_result.confidence,
+        metadata={
+            "latency_ms": measure_latency_ms(generation_start, generation_end),
+            "uncertainty_samples": len(samples),
+        },
+    )
 
     return {
         "found": True,
@@ -205,6 +236,7 @@ def get_patient_discharge_draft(patient_id: str) -> dict:
         "patient_name": f"{demo['name']} {demo['surname']}",
         "extracted_flags": flags.model_dump(),
         "rag_context": _rag_context_metadata(rag_context),
+        "guardrail": guardrail.model_dump(),
         **uncertain_result.to_dict(),
     }
 
