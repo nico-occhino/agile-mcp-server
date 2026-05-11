@@ -17,6 +17,7 @@ dependencies = [
     "structlog>=24.0",
     "fastapi>=0.115.0",
     "uvicorn>=0.30.0",
+    "PyJWT>=2.8.0",
 ]
 
 [project.optional-dependencies]
@@ -30,7 +31,7 @@ eval = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["data*", "features*", "workflow*", "orchestrator*", "retrieval*", "rag*", "guardrails*"]
+include = ["auth*", "data*", "features*", "workflow*", "orchestrator*", "retrieval*", "rag*", "guardrails*"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

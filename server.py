@@ -72,6 +72,14 @@ configure_logging()
 
 from workflow.instrumentation import instrumented
 
+from auth.context import anonymous_context
+from auth.jwt import (
+    AuthError,
+    MissingTokenError,
+    decode_and_verify_jwt,
+    is_auth_enabled,
+)
+from auth.permissions import has_required_permissions, required_permissions_for_tool
 from fastmcp import FastMCP
 from guardrails.decision import evaluate_guardrail
 from guardrails.input_guardrail import (
@@ -143,6 +151,85 @@ def evaluate_input_prompt_guardrail(
         use_llm_classifier=use_llm_classifier,
     ).model_dump()
 
+
+def decode_jwt_auth_context(token: str | None = None) -> dict:
+    """
+    Decode and verify a JWT into a typed Phase 2 caller context.
+
+    This demo tool supports future Aria integration work. If a token is
+    provided, it is verified and mapped into AuthContext regardless of
+    AUTH_ENABLED. If no token is provided and AUTH_ENABLED is false, an
+    anonymous context is returned. It does not access patient data and does not
+    execute clinical tools.
+
+    Args:
+        token: Optional JWT string to decode and verify.
+    """
+    try:
+        if token:
+            return {
+                "auth_enabled": is_auth_enabled(),
+                "context": decode_and_verify_jwt(token).model_dump(),
+            }
+        if not is_auth_enabled():
+            return {
+                "auth_enabled": False,
+                "context": anonymous_context().model_dump(),
+            }
+        raise MissingTokenError("Missing authentication token.")
+    except AuthError as exc:
+        return _auth_error_payload(exc, tool_name="decode_jwt_auth_context")
+
+
+def authorize_tool_access(tool_name: str, token: str | None = None) -> dict:
+    """
+    Check whether a JWT/auth context can access a given MCP tool.
+
+    This Phase 2 demo tool verifies the optional JWT, extracts caller context,
+    and evaluates the deterministic tool permission policy. It only checks
+    access; it does not execute the requested tool or access patient data.
+
+    Args:
+        tool_name: MCP tool name to check.
+        token: Optional JWT string to decode and verify.
+    """
+    context_result = _context_for_auth_demo(token, tool_name)
+    if "error" in context_result:
+        return context_result
+
+    context = context_result["context"]
+    required = required_permissions_for_tool(tool_name)
+    authorized = has_required_permissions(context, tool_name)
+    return {
+        "authorized": authorized,
+        "tool": tool_name,
+        "subject": context.subject,
+        "role": context.role,
+        "required_permissions": required,
+        "permissions": context.permissions,
+        "error": None if authorized else "Unauthorized: missing required permissions.",
+    }
+
+
+def _context_for_auth_demo(token: str | None, tool_name: str) -> dict:
+    try:
+        if token:
+            return {"context": decode_and_verify_jwt(token)}
+        if not is_auth_enabled():
+            return {"context": anonymous_context()}
+        raise MissingTokenError("Missing authentication token.")
+    except AuthError as exc:
+        return _auth_error_payload(exc, tool_name=tool_name)
+
+
+def _auth_error_payload(exc: AuthError, tool_name: str) -> dict:
+    return {
+        "authorized": False,
+        "tool": tool_name,
+        "error": str(exc),
+        "auth_enabled": is_auth_enabled(),
+    }
+
 # ---------------------------------------------------------------------------
 # Server instance
 # ---------------------------------------------------------------------------
@@ -210,6 +297,24 @@ mcp.tool(
         "openWorldHint": False,
     }
 )(instrumented("evaluate_input_prompt_guardrail")(evaluate_input_prompt_guardrail))
+
+mcp.tool(
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)(instrumented("decode_jwt_auth_context")(decode_jwt_auth_context))
+
+mcp.tool(
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)(instrumented("authorize_tool_access")(authorize_tool_access))
 
 
 # ---------------------------------------------------------------------------

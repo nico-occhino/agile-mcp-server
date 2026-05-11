@@ -167,6 +167,49 @@ The tool does not access patient data and does not execute clinical tools.
 
 ---
 
+## JWT Auth / Authorization Skeleton
+
+The repository now includes a Phase 2 JWT auth skeleton for future Aria
+integration. JWT carries caller identity and context, such as subject, username,
+role, department, permissions, issuer, audience, issued-at, and expiration.
+
+A JWT has the shape:
+
+```text
+header.payload.signature
+```
+
+The server verifies the signature and configured claims, then maps the payload
+into an `AuthContext`. Authorization is separate from prompt safety: it maps MCP
+tool names to required permissions and checks whether the caller can access the
+requested tool.
+
+These layers answer different questions:
+
+- JWT/auth: who are you and what can you call?
+- input guardrail: is this prompt safe before execution?
+- output guardrail: is generated text reliable enough to show?
+
+`AUTH_ENABLED=false` by default, so Phase 1 demos and tests continue to work
+without tokens. The current auth tools are independent demo surfaces:
+
+- MCP tool `decode_jwt_auth_context`
+- MCP tool `authorize_tool_access`
+- Swagger endpoint `POST /auth/decode`
+- Swagger endpoint `POST /auth/authorize-tool`
+
+Run the local JWT demo:
+
+```bash
+python scripts/demo_jwt.py
+```
+
+No real secrets are committed. Use `HS256` only for local/demo or if Agile
+provides a shared secret; use `RS256` with a public key if Aria signs tokens
+with a private key.
+
+---
+
 ## Remote MCP / Aria Integration
 
 MCP remains the target integration interface. Agile's Aria orchestrator can
@@ -355,6 +398,8 @@ LLM integration tests (full pipeline calls with real API keys) belong in `script
 | `get_recently_admitted` | Deterministic | Time-window admission filter |
 | `evaluate_clinical_output_guardrail` | Guardrail | Evaluate generated clinical output confidence and task risk |
 | `evaluate_input_prompt_guardrail` | Guardrail | Evaluate user prompt risk before NL2API execution |
+| `decode_jwt_auth_context` | Auth demo | Decode and verify a JWT into caller context |
+| `authorize_tool_access` | Auth demo | Check whether caller context can access a tool |
 
 ---
 
