@@ -74,6 +74,9 @@ from workflow.instrumentation import instrumented
 
 from fastmcp import FastMCP
 from guardrails.decision import evaluate_guardrail
+from guardrails.input_guardrail import (
+    evaluate_input_prompt_guardrail as run_input_prompt_guardrail,
+)
 
 # Import all feature functions
 from features.patient_lookup import (
@@ -113,6 +116,31 @@ def evaluate_clinical_output_guardrail(
     return evaluate_guardrail(
         task_type=task_type,
         confidence=confidence,
+    ).model_dump()
+
+
+def evaluate_input_prompt_guardrail(
+    query: str,
+    use_llm_classifier: bool = False,
+) -> dict:
+    """
+    Evaluate a user query before NL2API parsing, routing, or execution.
+
+    This input guardrail blocks obvious prompt injection and unsafe requests
+    with deterministic static filtering. Optionally, an LLM classifier can
+    produce structured risk scores for ambiguous prompts, but the final
+    ALLOW / CLARIFY / REQUIRES_REVIEW / BLOCK decision is always made by
+    deterministic policy rules. This tool does not access patient data and
+    does not execute clinical tools.
+
+    Args:
+        query: User request to evaluate as untrusted input.
+        use_llm_classifier: Whether to use optional structured LLM scoring
+            after the static filter passes.
+    """
+    return run_input_prompt_guardrail(
+        query=query,
+        use_llm_classifier=use_llm_classifier,
     ).model_dump()
 
 # ---------------------------------------------------------------------------
@@ -171,6 +199,17 @@ mcp.tool(
         "openWorldHint": False,
     }
 )(instrumented("evaluate_clinical_output_guardrail")(evaluate_clinical_output_guardrail))
+
+mcp.tool(
+    annotations={
+        # Intended semantics: local policy evaluation only; no patient data
+        # access, mutation, clinical execution, or open-world side effects.
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)(instrumented("evaluate_input_prompt_guardrail")(evaluate_input_prompt_guardrail))
 
 
 # ---------------------------------------------------------------------------

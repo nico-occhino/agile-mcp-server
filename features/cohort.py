@@ -3,12 +3,12 @@ features/cohort.py
 ------------------
 Multi-step workflow composition for population-level queries.
 Schema: Nocita's real API shape. Diagnosis codes are Italian ministerial
-numeric strings ("428", "4349"), not ICD-10.
+numeric strings ("428", "4349")
 
 COHORT CONFIDENCE LOGIC
 -----------------------
 If ANY patient confidence < 0.5 (LOW), the cohort confidence is set to
-the minimum — not the mean. A single failed summary cannot be hidden by
+the minimum  not the mean. A single failed summary cannot be hidden by
 high scores on other patients. Both mean and min are always returned.
 """
 from __future__ import annotations

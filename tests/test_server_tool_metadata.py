@@ -14,3 +14,11 @@ async def test_guardrail_tool_annotations_are_safe():
     assert guardrail_tool.annotations.destructiveHint is False
     assert guardrail_tool.annotations.idempotentHint is True
     assert guardrail_tool.annotations.openWorldHint is False
+
+    input_guardrail_tool = tool_by_name["evaluate_input_prompt_guardrail"]
+
+    assert input_guardrail_tool.annotations is not None
+    assert input_guardrail_tool.annotations.readOnlyHint is True
+    assert input_guardrail_tool.annotations.destructiveHint is False
+    assert input_guardrail_tool.annotations.idempotentHint is True
+    assert input_guardrail_tool.annotations.openWorldHint is False
