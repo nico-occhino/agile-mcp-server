@@ -11,6 +11,7 @@ from fastapi import FastAPI, Header
 from pydantic import BaseModel, Field
 
 from features.patient_lookup import get_patient_status
+from auth.request_auth import extract_bearer_token_from_headers
 from guardrails.decision import evaluate_guardrail
 from guardrails.input_guardrail import evaluate_input_prompt_guardrail
 from orchestrator.main import handle_query
@@ -80,7 +81,10 @@ def auth_decode(
     request: JWTDecodeRequest,
     authorization: str | None = Header(default=None),
 ) -> dict:
-    return decode_jwt_auth_context(request.token or _bearer_token(authorization))
+    token = request.token or extract_bearer_token_from_headers(
+        {"authorization": authorization or ""}
+    )
+    return decode_jwt_auth_context(token)
 
 
 @app.post("/auth/authorize-tool")
@@ -88,21 +92,15 @@ def auth_authorize_tool(
     request: ToolAuthorizationRequest,
     authorization: str | None = Header(default=None),
 ) -> dict:
+    token = request.token or extract_bearer_token_from_headers(
+        {"authorization": authorization or ""}
+    )
     return authorize_tool_access(
         tool_name=request.tool_name,
-        token=request.token or _bearer_token(authorization),
+        token=token,
     )
 
 
 @app.get("/patients/{patient_id}/status")
 def patient_status(patient_id: str) -> dict:
     return get_patient_status(patient_id)
-
-
-def _bearer_token(authorization: str | None) -> str | None:
-    if not authorization:
-        return None
-    prefix = "Bearer "
-    if authorization.startswith(prefix):
-        return authorization[len(prefix) :].strip()
-    return None

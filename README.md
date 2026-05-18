@@ -28,10 +28,25 @@ agile-mcp-server (this repo)
       ├── features/patient_summary.py  — LLM summary + uncertainty estimation
       └── features/cohort.py           — multi-step workflow for population queries
       ↓
-data/mock_store.py (Phase 1) → workflow/api_client.py (Phase 2, stub)
+data.repository.get_repository()
+      ↓
+data/mock_store.py (Phase 1) → future data/agile_api_repository.py (Phase 2)
 ```
 
 The server exposes curated clinical MCP tools plus guardrail evaluation tools. Each clinical tool that uses an LLM internally returns an `UncertainResult` — the answer plus a confidence score and level (HIGH/MEDIUM/LOW). LOW-confidence responses should be surfaced as a clarification request, not displayed directly.
+
+---
+
+## Current Status
+
+- Phase 1 mock data is active through `data.repository.get_repository()`.
+- FastMCP/SSE server is working.
+- NL2API orchestrator is active.
+- Input and output guardrails are active.
+- JWT skeleton and Authorization Bearer header extraction helpers are present.
+- Agile API adapter is pending.
+- JWT enforcement on clinical tools is pending Aria integration testing.
+- Real downstream Agile API calls are pending.
 
 ---
 
@@ -421,6 +436,7 @@ agile-mcp-server/
 │
 ├── data/
 │   ├── mock_store.py          # Phase 1: synthetic patients (Nocita's real schema)
+│   ├── repository.py          # PatientRepository protocol and active repository selector
 │   └── mock_patient.json      # placeholder for Nocita's JSON fixtures (Phase 2)
 │
 ├── features/
@@ -445,15 +461,20 @@ agile-mcp-server/
 |---|---|---|
 | 1 | Synthetic mock store (`data/mock_store.py`) | ✅ Active |
 | 2 | Nocita's real SDO-shaped JSON fixtures | 🔜 Pending NDA + API contracts |
-| 3 | Live Agile hospital APIs via `workflow/api_client.py` | 🔜 Pending VPN/on-site access |
+| 3 | Live Agile hospital APIs via `data/agile_api_repository.py` + `workflow/api_client.py` | 🔜 Pending VPN/on-site access |
 
-To move from Phase 1 to Phase 2: replace the import in each feature file from `from data.mock_store import get_patient` to `from workflow.api_client import get_patient`. Feature code doesn't change; only the data layer does.
+To move from Phase 1 to Phase 2, keep feature code on the repository
+abstraction. Features should continue using `data.repository.get_repository()`.
+Add a future `data/agile_api_repository.py` that implements
+`PatientRepository` using the low-level HTTP helpers in `workflow/api_client.py`,
+then select that repository centrally through configuration or startup wiring.
+Feature modules should not import the HTTP client directly.
 
 ---
 
 ## Known limitations (Phase 1 POC)
 
 - **Single event per patient**: Agile's API returns one current event per request. Multi-event admission history requires a dedicated history endpoint (Phase 2).
-- **No authentication**: `workflow/api_client.py` stubs auth. Production requires OAuth2 or API key auth at the FastAPI gateway layer.
+- **Auth not enforced on clinical tools yet**: JWT decoding and header extraction exist, but `AUTH_ENABLED=false` remains the default until Aria integration is tested.
 - **Embedding model warm-up**: first call to any freetext uncertainty function takes ~1s to load `all-MiniLM-L6-v2`. Subsequent calls use the in-memory cache. Production would warm up at server startup.
 - **Diagnosis codes**: mock data uses Italian ministerial ICD-9-CM numeric codes. The `list_patients_by_diagnosis` function uses prefix matching (`"428"` matches `"4280"`, `"4281"`, etc.), which works for the mock but may need a proper code vocabulary in Phase 2.

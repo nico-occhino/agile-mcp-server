@@ -1,35 +1,54 @@
 """
 workflow/api_client.py
 ----------------------
-HTTP client for Agile's hospital APIs.
+Low-level HTTP client placeholder for Agile's hospital APIs.
 
-CURRENT STATUS: Phase 1 stub — not used yet.
+CURRENT STATUS: Phase 1 stub; not used by clinical features yet.
 
-In Phase 2, when Nocita provides the real API contracts, this module
-will replace direct mock_store lookups in the feature files. The feature
-code itself shouldn't change — only the import at the bottom of each
-feature file switches from:
+In Phase 2, when Agile provides the real API contracts, this module should stay
+focused on HTTP mechanics: base URL handling, timeouts, headers, status-code
+translation, and JSON parsing. It should not be imported directly by clinical
+feature modules.
 
-    from data.mock_store import get_patient
+Intended architecture:
 
-to:
+    features -> data.repository -> AgileApiRepository -> workflow.api_client -> Agile API
 
-    from workflow.api_client import get_patient
+A future data/agile_api_repository.py should implement PatientRepository using
+this client. Repository selection should happen centrally via
+data.repository.get_repository() / set_repository(), environment configuration,
+or application startup wiring. Feature modules should keep depending on the
+repository abstraction, not on httpx or raw Agile API functions.
 
-EXPECTED INTERFACE (fill in when API contracts arrive)
-------------------------------------------------------
-async def get_patient(patient_id: str) -> dict | None: ...
-async def list_patients_by_diagnosis(diagnosis_code_prefix: str) -> list[dict]: ...
-async def get_recently_admitted(days: int) -> list[dict]: ...
+Downstream JWT forwarding is expected for Aria-originated calls, but the exact
+Bearer-token contract is pending Agile API confirmation.
+
+EXPECTED LOW-LEVEL SHAPE (fill in when API contracts arrive)
+------------------------------------------------------------
+async def request_json(
+    method: str,
+    path: str,
+    *,
+    bearer_token: str | None = None,
+    ...
+) -> dict: ...
+
+async def get_json(
+    path: str,
+    *,
+    bearer_token: str | None = None,
+    ...
+) -> dict: ...
 
 WHY ASYNC
 ---------
 Real HTTP calls should be async so the MCP server can handle concurrent
-requests without blocking. httpx.AsyncClient is the right tool.
-For Phase 1 the mock store is synchronous and that's fine.
+requests without blocking. httpx.AsyncClient is the right tool. For Phase 1 the
+mock repository is synchronous and that is fine.
 """
 
 import os
+
 import httpx
 from dotenv import load_dotenv
 
@@ -40,18 +59,18 @@ AGILE_API_KEY = os.getenv("AGILE_API_KEY", "")
 
 
 # ---------------------------------------------------------------------------
-# Placeholder — implement when Nocita sends API contracts
+# Placeholder; implement when Agile sends API contracts.
 # ---------------------------------------------------------------------------
 
 async def get_patient(patient_id: str) -> dict | None:
-    """Fetch a single patient record from Agile's API."""
+    """Placeholder only; implement through AgileApiRepository in Phase 2."""
     raise NotImplementedError(
-        "Phase 2 not started. Use data.mock_store.get_patient() for now."
+        "Phase 2 not started. Implement data.agile_api_repository.AgileApiRepository."
     )
 
 
 async def list_patients_by_diagnosis(diagnosis_code_prefix: str) -> list[dict]:
-    """Fetch patients by numeric diagnosis-code prefix."""
+    """Placeholder only; implement through PatientRepository in Phase 2."""
     raise NotImplementedError(
-        "Phase 2 not started. Use data.mock_store.list_patients_by_diagnosis() for now."
+        "Phase 2 not started. Implement data.agile_api_repository.AgileApiRepository."
     )

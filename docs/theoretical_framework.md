@@ -5,7 +5,7 @@ This document outlines the methodological foundation for the Agile S.r.l. Model 
 ## 1. Architectural Paradigms
 The system adopts three core paradigms:
 1. **Model Context Protocol (MCP)**: A standardized JSON-RPC 2.0 interface that abstracts the hospital's internal APIs from the consuming LLM. The server exposes deterministic, strongly-typed tools that the client LLM can invoke.
-2. **Repository Pattern for Data Decoupling**: The data layer is decoupled via a `PatientRepository` protocol. This allows seamless transition from the synthetic `mock_store.py` to the production `api_client.py` without modifying feature logic.
+2. **Repository Pattern for Data Decoupling**: The data layer is decoupled via a `PatientRepository` protocol. This allows transition from the synthetic `mock_store.py` to a future `AgileApiRepository` backed by `workflow/api_client.py` without modifying feature logic.
 3. **Pydantic-driven Intermediate Representation (IR)**: The client parses natural language queries into a discriminated union of strictly validated Pydantic models. This ensures O(1) routing and structural guarantees before any backend tool is executed.
 
 ## 2. Deterministic vs. Stochastic Pathways
