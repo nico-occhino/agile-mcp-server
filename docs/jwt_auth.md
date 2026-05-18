@@ -93,22 +93,57 @@ Available demo surfaces:
 
 - MCP tool: `decode_jwt_auth_context`
 - MCP tool: `authorize_tool_access`
+- MCP tool: `current_jwt_auth_context`
 - Swagger endpoint: `POST /auth/decode`
 - Swagger endpoint: `POST /auth/authorize-tool`
 - Local script: `python scripts/demo_jwt.py`
 
 These surfaces do not access patient data and do not execute clinical tools.
 
+## Confirmed Aria Direction
+
+Ing. Nocita clarified the expected Phase 2 integration:
+
+- Aria is the MCP client.
+- This repository is the MCP server.
+- Aria will call this MCP server over SSE.
+- Aria will pass JWT in the HTTP header as `Authorization: Bearer <token>`.
+- JWT should become mandatory in Phase 2.
+- If `AUTH_ENABLED=true` and no JWT is received, the request should be rejected
+  because it is not coming through Aria.
+- Agile likely uses `HS256` with a pre-shared secret as the first integration
+  path.
+- `RS256` support remains available, but it is not the first expected path.
+- JWT header and payload are readable; the signature provides integrity.
+- If encrypted payloads are required later, that would be JWE, not plain JWT.
+- The received JWT may also be forwarded to downstream clinical-record APIs as
+  a Bearer token.
+
+## FastMCP Header Access
+
+The installed FastMCP version exposes HTTP request headers for SSE requests via:
+
+```python
+from fastmcp.server.dependencies import get_http_headers
+
+headers = get_http_headers(include={"authorization"})
+```
+
+FastMCP excludes `authorization` by default from forwarded header helpers, so
+the helper must explicitly include it. This repo wraps that behavior in
+`auth.request_auth.get_current_auth_context()`.
+
+The MCP demo tool `current_jwt_auth_context` exercises this real header-based
+path without protecting clinical tools yet. The next step is to test it from
+Aria over SSE and then decide where to enforce authorization centrally.
+
 ## Integration Questions for Nocita
 
-1. Will Aria pass JWT in the HTTP `Authorization` header, MCP metadata, or a
-   tool argument?
-2. Will Aria use `HS256` with a shared secret or `RS256` with a public/private
-   key pair?
-3. What exact claims will Aria include?
-4. Does Aria enforce authorization before calling our MCP server, or must this
+1. What exact claims will Aria include?
+2. Does Aria enforce authorization before calling our MCP server, or must this
    server enforce it too?
-5. Should this server forward the same JWT to Agile APIs as a Bearer token?
+3. Should this server forward the same JWT to Agile APIs as a Bearer token?
+4. Will the pre-shared `HS256` secret be environment-specific and rotated?
 
 ## Future Integration Notes
 

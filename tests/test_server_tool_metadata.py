@@ -25,8 +25,9 @@ async def test_guardrail_tool_annotations_are_safe():
 
     decode_auth_tool = tool_by_name["decode_jwt_auth_context"]
     authorize_auth_tool = tool_by_name["authorize_tool_access"]
+    current_auth_tool = tool_by_name["current_jwt_auth_context"]
 
-    for tool in [decode_auth_tool, authorize_auth_tool]:
+    for tool in [decode_auth_tool, authorize_auth_tool, current_auth_tool]:
         assert tool.annotations is not None
         assert tool.annotations.readOnlyHint is True
         assert tool.annotations.destructiveHint is False

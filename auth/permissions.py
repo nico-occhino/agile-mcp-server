@@ -22,6 +22,7 @@ TOOL_PERMISSION_POLICY: dict[str, list[str]] = {
     "evaluate_input_prompt_guardrail": [],
     "decode_jwt_auth_context": [],
     "authorize_tool_access": [],
+    "current_jwt_auth_context": [],
 }
 
 

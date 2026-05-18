@@ -2,7 +2,7 @@ import time
 
 import jwt
 
-from server import authorize_tool_access, decode_jwt_auth_context
+from server import authorize_tool_access, current_jwt_auth_context, decode_jwt_auth_context
 
 
 def _configure_hs256(monkeypatch, secret: str = "test-secret-that-is-long-enough!") -> None:
@@ -72,3 +72,12 @@ def test_authorize_tool_access_allows_guardrail_without_token_when_auth_disabled
 
     assert result["authorized"] is True
     assert result["subject"] == "anonymous"
+
+
+def test_current_jwt_auth_context_returns_anonymous_without_http_request_when_disabled(monkeypatch):
+    monkeypatch.setenv("AUTH_ENABLED", "false")
+
+    result = current_jwt_auth_context()
+
+    assert result["auth_enabled"] is False
+    assert result["context"]["subject"] == "anonymous"

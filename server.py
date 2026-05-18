@@ -80,6 +80,7 @@ from auth.jwt import (
     is_auth_enabled,
 )
 from auth.permissions import has_required_permissions, required_permissions_for_tool
+from auth.request_auth import get_current_auth_context
 from fastmcp import FastMCP
 from guardrails.decision import evaluate_guardrail
 from guardrails.input_guardrail import (
@@ -211,6 +212,25 @@ def authorize_tool_access(tool_name: str, token: str | None = None) -> dict:
     }
 
 
+def current_jwt_auth_context() -> dict:
+    """
+    Return the JWT AuthContext from the current HTTP Authorization header.
+
+    This Phase 2 demo tool tests real header-based JWT extraction for MCP/SSE
+    calls. It reads Authorization: Bearer <token> from the current FastMCP HTTP
+    request context, verifies the token when present, and returns the caller
+    context. It does not access patient data and does not execute clinical
+    tools.
+    """
+    try:
+        return {
+            "auth_enabled": is_auth_enabled(),
+            "context": get_current_auth_context().model_dump(),
+        }
+    except AuthError as exc:
+        return _auth_error_payload(exc, tool_name="current_jwt_auth_context")
+
+
 def _context_for_auth_demo(token: str | None, tool_name: str) -> dict:
     try:
         if token:
@@ -315,6 +335,15 @@ mcp.tool(
         "openWorldHint": False,
     }
 )(instrumented("authorize_tool_access")(authorize_tool_access))
+
+mcp.tool(
+    annotations={
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    }
+)(instrumented("current_jwt_auth_context")(current_jwt_auth_context))
 
 
 # ---------------------------------------------------------------------------

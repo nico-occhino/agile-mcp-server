@@ -195,8 +195,15 @@ without tokens. The current auth tools are independent demo surfaces:
 
 - MCP tool `decode_jwt_auth_context`
 - MCP tool `authorize_tool_access`
+- MCP tool `current_jwt_auth_context`
 - Swagger endpoint `POST /auth/decode`
 - Swagger endpoint `POST /auth/authorize-tool`
+
+Header-based JWT extraction is the confirmed Phase 2 path for Aria over SSE:
+Aria sends `Authorization: Bearer <token>`, and this server can read that header
+through FastMCP request context. Real enforcement will happen after Aria header
+passing is tested; for now the demo tools remain useful for decoding and
+authorization checks without changing clinical tool schemas.
 
 Run the local JWT demo:
 
@@ -400,6 +407,7 @@ LLM integration tests (full pipeline calls with real API keys) belong in `script
 | `evaluate_input_prompt_guardrail` | Guardrail | Evaluate user prompt risk before NL2API execution |
 | `decode_jwt_auth_context` | Auth demo | Decode and verify a JWT into caller context |
 | `authorize_tool_access` | Auth demo | Check whether caller context can access a tool |
+| `current_jwt_auth_context` | Auth demo | Read JWT context from current HTTP Authorization header |
 
 ---
 
