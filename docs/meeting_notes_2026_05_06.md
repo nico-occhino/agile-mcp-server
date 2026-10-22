@@ -12,14 +12,15 @@ patient data.
 
 ## Project Focus Split
 
-- Sisca's focus: RAG, documents, LM Wiki, and discharge-letter style/context.
-- Nicolo's focus: validation, uncertainty-aware guardrails, risk-based
+- RAG workstream: documents, LM Wiki, and discharge-letter style/context.
+- Integration workstream: validation, uncertainty-aware guardrails, risk-based
   thresholds, latency/token/cost evaluation, and remote MCP deploy readiness.
 
 ## Next Steps
 
-- Agile will provide API/account/test-server details later.
+- Production API contracts and access details were pending.
 - Keep patient facts behind curated tools and future Agile APIs.
 - Keep guardrail decisions explicit: ACCEPT, REQUIRES_REVIEW, REJECT.
 - Add evaluation outputs for latency, optional token usage, and cost when
   available.
+
