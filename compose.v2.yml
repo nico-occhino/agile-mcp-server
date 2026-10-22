@@ -1,0 +1,32 @@
+services:
+  hospital:
+    image: agile-v2:local
+    build:
+      context: .
+      dockerfile: v2/Dockerfile
+    command: python -m v2.synthetic_api
+    environment:
+      V2_DEMO_MODE: "true"
+    ports:
+      - "127.0.0.1:8081:8081"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mcp:
+    image: agile-v2:local
+    build:
+      context: .
+      dockerfile: v2/Dockerfile
+    command: python -m v2.mcp_server
+    environment:
+      V2_DEMO_MODE: "true"
+      V2_HOSPITAL_URL: http://hospital:8081
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      hospital:
+        condition: service_healthy
+
