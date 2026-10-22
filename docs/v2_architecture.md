@@ -1,5 +1,9 @@
 # V2 synthetic integration path
 
+Architecture decisions: [canonical path](adr/0001-canonical-public-path.md),
+[synthetic service boundary](adr/0002-synthetic-service-boundary.md), and
+[LLM and uncertainty](adr/0003-llm-and-uncertainty.md).
+
 V2 is a portfolio demonstration with synthetic data. It does not implement or
 validate real hospital contracts and does not establish clinical correctness.
 The older `server.py`, `api_demo.py`, and `client/` paths are retained as
