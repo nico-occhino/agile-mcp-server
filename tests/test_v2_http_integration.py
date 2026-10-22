@@ -81,3 +81,16 @@ async def test_mcp_exposes_only_canonical_tool_and_denies_missing_token():
         response = await client.call_tool("execute_query", {"query": "Come sta il paziente 101?"})
         assert "unauthorized" in repr(response)
 
+
+@pytest.mark.asyncio
+async def test_llm_failure_returns_safe_review_status():
+    class BrokenGenerator:
+        async def generate(self, system: str, user: str) -> str:
+            raise ValueError("sensitive prompt text")
+
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=create_app(SETTINGS)), base_url="http://synthetic") as client:
+        service = QueryService(HttpPatientRepository(client, SETTINGS.hospital_url), SETTINGS, BrokenGenerator())
+        result = await service.execute("Riassunto paziente 101", f"Bearer {token()}")
+        assert result == {"status": "llm_error", "review": "human_review_required"}
+        assert "sensitive" not in repr(result)
+
