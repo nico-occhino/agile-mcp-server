@@ -19,7 +19,16 @@ jobs:
         run: uv sync --locked --extra dev
       - name: Unit and integration tests
         run: uv run --locked pytest -q
+      - name: Real HTTP smoke test
+        run: uv run --locked python -m scripts.smoke_v2_http
       - name: Ruff incremental gate
-        run: uv run --locked ruff check --select E4,E7,E9,F workflow/instrumentation.py tests/test_instrumentation_privacy.py v2 tests/test_v2_http_integration.py
+        run: uv run --locked ruff check --select E4,E7,E9,F workflow/instrumentation.py tests/test_instrumentation_privacy.py v2 scripts/smoke_v2_http.py tests/test_v2_http_integration.py
       - name: mypy incremental gate
         run: uv run --locked mypy --follow-imports=skip --ignore-missing-imports workflow/instrumentation.py v2
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build non-root v2 image
+        run: docker compose -f compose.v2.yml build
