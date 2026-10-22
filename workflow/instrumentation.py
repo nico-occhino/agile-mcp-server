@@ -1,4 +1,5 @@
-import time, functools
+import functools
+import time
 from workflow.logging import log
 
 def instrumented(tool_name: str):
