@@ -1,16 +1,22 @@
 # agile-mcp-server
 
-**MCP server POC — uncertainty-aware NL2API for hospital management**
+**Synthetic hospital MCP and NL2API portfolio project**
 
-Curricular internship at Agile S.r.l., Catania.
-Supervisors: Prof. Morana (UniCT), Ing. Nocita (CTO Agile).
-Author: Nicolò Carmelo Occhino
+The supported v2 demonstration is documented in [V2 architecture](docs/v2_architecture.md).
+It uses Streamable HTTP, an independent synthetic REST API, and a single
+secured MCP execution tool. The older instructions below describe the original
+internship prototype and are retained for development and historical context.
+
+Developed during a curricular internship. Public sample records are synthetic.
 
 ---
 
 ## What this is
 
-A hospital clinician types a natural-language request. This server translates it into a safe, pre-approved API call against Agile's hospital management system and returns a structured answer with a calibrated confidence score.
+In v2, a client submits a natural-language request. The server maps supported
+intents to a synthetic hospital API and returns structured data. Any legacy
+confidence score measures sample consistency only; it has not been clinically
+calibrated. No real Agile API integration is claimed.
 
 The key design choice, **NL2API, not Text-to-SQL**. Instead of letting an LLM generate raw SQL (which opens a SQL-injection surface in a healthcare context), the LLM selects from a finite catalog of pre-hardened API tools. New capability requires a deliberate act by a human engineer, not a cleverly-worded prompt.
 
@@ -478,3 +484,4 @@ Feature modules should not import the HTTP client directly.
 - **Auth not enforced on clinical tools yet**: JWT decoding and header extraction exist, but `AUTH_ENABLED=false` remains the default until Aria integration is tested.
 - **Embedding model warm-up**: first call to any freetext uncertainty function takes ~1s to load `all-MiniLM-L6-v2`. Subsequent calls use the in-memory cache. Production would warm up at server startup.
 - **Diagnosis codes**: mock data uses Italian ministerial ICD-9-CM numeric codes. The `list_patients_by_diagnosis` function uses prefix matching (`"428"` matches `"4280"`, `"4281"`, etc.), which works for the mock but may need a proper code vocabulary in Phase 2.
+
