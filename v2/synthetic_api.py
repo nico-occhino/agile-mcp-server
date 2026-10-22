@@ -50,7 +50,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 
 if __name__ == "__main__":
+    import os
     import uvicorn
 
-    uvicorn.run(create_app(), host="0.0.0.0", port=8081)
+    uvicorn.run(create_app(), host="0.0.0.0", port=int(os.getenv("V2_HOSPITAL_PORT", "8081")))
 
