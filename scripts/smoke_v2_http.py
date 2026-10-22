@@ -55,7 +55,9 @@ async def main() -> None:
                     assert "101" in repr(result) and "unauthorized" not in repr(result)
                     print("real HTTP MCP to hospital API: ok")
                     return
-            except (httpx.HTTPError, OSError):
+            except (httpx.HTTPError, OSError, RuntimeError):
+                if processes[1].poll() is not None:
+                    raise RuntimeError("MCP process exited before accepting requests")
                 await asyncio.sleep(0.1)
         raise RuntimeError("MCP HTTP request did not complete")
     finally:
