@@ -197,23 +197,6 @@ def call_llm_structured(
 
     raise last_error  # pragma: no cover - defensive; loop always returns or raises
 
-    schema_json = schema.model_json_schema()
-    augmented_system = (
-        f"{system}\n\n"
-        f"Respond ONLY with a JSON object that strictly follows this schema:\n"
-        f"{schema_json}\n"
-        f"No preamble, no markdown fences, no explanation — raw JSON only."
-    )
-    raw = call_llm(
-        system=augmented_system,
-        user=user,
-        temperature=temperature,
-        model=model,
-    )
-    # Strip accidental markdown fences from models that ignore instructions
-    raw = raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-    return schema.model_validate_json(raw)
-
 
 def _strip_json_fences(raw: str) -> str:
     return (
@@ -223,3 +206,4 @@ def _strip_json_fences(raw: str) -> str:
         .removesuffix("```")
         .strip()
     )
+
