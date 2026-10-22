@@ -6,7 +6,7 @@ def instrumented(tool_name: str):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             start = time.monotonic()
-            log.info("tool_call_start", tool=tool_name, kwargs=kwargs)
+            log.info("tool_call_start", tool=tool_name)
             try:
                 result = fn(*args, **kwargs)
                 duration = time.monotonic() - start
@@ -25,7 +25,7 @@ def instrumented(tool_name: str):
                     "tool_call_error",
                     tool=tool_name,
                     duration_s=round(duration, 3),
-                    error=str(exc),
+                    error_type=type(exc).__name__,
                     ok=False,
                 )
                 raise
