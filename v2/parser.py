@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 
+import httpx
 from pydantic import ValidationError
 
 from v2.ir import QueryIR
@@ -39,6 +40,6 @@ async def parse_query(query: str, generator: TextGenerator | None = None) -> Que
         )
         payload = json.loads(raw)
         return QueryIR.model_validate(payload)
-    except (ValueError, KeyError, TypeError, ValidationError) as exc:
+    except (ValueError, KeyError, TypeError, ValidationError, httpx.HTTPError) as exc:
         raise ParseFailure("Could not safely interpret request") from exc
 
