@@ -11,6 +11,8 @@ __pycache__/
 *.egg-info/
 dist/
 .venv/
+.venv-v2/
+.uv-cache/
 venv/
 outputs/*.json
 
@@ -26,3 +28,4 @@ ehthumbs.db
 .vscode/
 .idea/
 *.iml
+
