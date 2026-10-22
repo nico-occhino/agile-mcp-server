@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 
+import httpx
 from guardrails.input_guardrail import evaluate_input_prompt_guardrail
 
 from v2.llm import TextGenerator
@@ -46,10 +47,13 @@ class QueryService:
                     result["summary"] = f"Synthetic patient {data['id']}: {data['status']} ({data['diagnosis_code']})."
                     result["review"] = "sample_data_only"
                 else:
-                    result["summary"] = await self.generator.generate(
-                        "Summarize only supplied synthetic structured data. State uncertainty. Do not infer diagnosis or treatment.",
-                        json.dumps(data, ensure_ascii=False),
-                    )
+                    try:
+                        result["summary"] = await self.generator.generate(
+                            "Summarize only supplied synthetic structured data. State uncertainty. Do not infer diagnosis or treatment.",
+                            json.dumps(data, ensure_ascii=False),
+                        )
+                    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+                        return {"status": "llm_error", "review": "human_review_required"}
                     result["review"] = "human_review_required"
             return result
         except AccessDenied:
